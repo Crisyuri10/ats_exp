@@ -27,7 +27,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Criar credenciais.json
-        run: echo '${{ secrets.GCP_SERVICE_ACCOUNT }}' > credenciais.json
+        env:
+          CREDS: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        run: echo "$CREDS" > credenciais.json
 
       - name: Executar ETL
         run: python sheets_conexao.py
