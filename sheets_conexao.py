@@ -13,31 +13,25 @@ def run(gc):
     header = bruto[0]
     df = pd.DataFrame(bruto[1:], columns=header)
 
-    # ===== 2. Remocao de linhas vazias =====
     df = df.rename(columns={"JANELA DE EXPEDIÇÃO": "data_exp", "STATUS TU": "status_tu", "CONF. PUXADA": "data_ats", "QTDE DE PEDIDOS": "qtde_pedidos", "TRANSP. + TP": "transportador", "TU(s)": "TU", "HORÁRIO": "horario"})
     df = df[df["data_exp"] != ""].reset_index(drop=True)
     print(f"Linhas apos remover vazias: {len(df)}")
 
-    # ===== 3. Conversao de data_exp, limite_ats e data_ats =====
     df["data_exp"] = pd.to_datetime(df["data_exp"].astype(float), unit="D", origin="1899-12-30")
     df["limite_ats"] = df["data_exp"] - pd.Timedelta(hours=3)
     df["data_ats"] = pd.to_datetime(pd.to_numeric(df["data_ats"], errors="coerce"), unit="D", origin="1899-12-30")
 
-    # ===== 3b. Criacao da coluna chave (transportador + horario + data_exp) =====
     df["chave"] = df["transportador"] + "_" + df["horario"] + "_" + df["data_exp"].dt.strftime("%d/%m/%Y %H:%M:%S")
 
-    # ===== 3c. Criacao da coluna sla_ats =====
     df["sla_ats"] = "fora_do_prazo"
     df.loc[df["data_ats"] <= df["limite_ats"], "sla_ats"] = "dentro_do_prazo"
     df.loc[df["data_ats"].isna(), "sla_ats"] = "em_aberto"
 
-    # ===== 4. Filtros =====
     df = df[~df["status_tu"].isin(["ZERADA TT", "CANCELADO"])].reset_index(drop=True)
     df = df[~df["transportador"].str.contains("LALAMOVE", case=False, na=False)].reset_index(drop=True)
     df = df[df["qtde_pedidos"].astype(str).str.strip() != ""].reset_index(drop=True)
     print(f"Linhas apos filtros de status_tu, transportador e qtde_pedidos: {len(df)}")
 
-    # ===== 5. Envio para a aba "etl" =====
     df_envio = df[["data_exp", "limite_ats", "data_ats", "sla_ats", "status_tu", "qtde_pedidos", "transportador", "TU", "horario", "chave"]].copy()
     for col in ["data_exp", "limite_ats", "data_ats"]:
         df_envio[col] = df_envio[col].dt.strftime("%d/%m/%Y %H:%M:%S").fillna("")
@@ -49,7 +43,6 @@ def run(gc):
     ws_etl.update([df_envio.columns.tolist()] + df_envio.values.tolist(), value_input_option="USER_ENTERED")
     print(f"Enviado para a aba 'etl': {len(df_envio)} linhas")
 
-    # ===== 7. Resumo de SLAs por dia =====
     df_resumo_base = df.copy()
     df_resumo_base["data_exp_dia"] = df_resumo_base["data_exp"].dt.date
     df_resumo_base["qtde_pedidos"] = pd.to_numeric(df_resumo_base["qtde_pedidos"], errors="coerce").fillna(0)
@@ -118,5 +111,10 @@ def run(gc):
 
 
 if __name__ == "__main__":
-    gc = gspread.service_account(filename="credenciais.json")
+    import os, json
+    creds_env = os.environ.get("GCP_SERVICE_ACCOUNT")
+    if creds_env:
+        gc = gspread.service_account_from_dict(json.loads(creds_env))
+    else:
+        gc = gspread.service_account(filename="credenciais.json")
     run(gc)
