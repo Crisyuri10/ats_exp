@@ -26,10 +26,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Criar credenciais.json
-        env:
-          CREDS: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-        run: echo "$CREDS" > credenciais.json
-
       - name: Executar ETL
+        env:
+          GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
         run: python sheets_conexao.py
