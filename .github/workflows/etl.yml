@@ -1,0 +1,33 @@
+name: ETL Sheets
+
+on:
+  schedule:
+    - cron: "30 8 * * *"   # 05:30 BRT
+    - cron: "0 10 * * *"   # 07:00 BRT
+    - cron: "0 12 * * *"   # 09:00 BRT
+    - cron: "0 14 * * *"   # 11:00 BRT
+    - cron: "30 16 * * *"  # 13:30 BRT
+    - cron: "30 19 * * *"  # 16:30 BRT
+    - cron: "0 20 * * *"   # 17:00 BRT
+    - cron: "0 23 * * *"   # 20:00 BRT
+    - cron: "0 1 * * *"    # 22:00 BRT
+  workflow_dispatch:
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Criar credenciais.json
+        run: echo '${{ secrets.GCP_SERVICE_ACCOUNT }}' > credenciais.json
+
+      - name: Executar ETL
+        run: python sheets_conexao.py
