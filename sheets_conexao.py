@@ -121,7 +121,8 @@
 
 
 
-
+import os
+import json
 import gspread
 import pandas as pd
 
@@ -129,7 +130,13 @@ import pandas as pd
 SHEET_ID = "1pvor4LGYpxE_7RJgJKCxMME2Yb47gNbByG4ZwZSctcE"
 ABA = "Sheet1"
 
-gc = gspread.service_account(filename="credenciais.json")
+# no GitHub Actions a credencial vem da secret GCP_SERVICE_ACCOUNT (json em texto);
+# localmente cai no arquivo credenciais.json
+creds_env = os.environ.get("GCP_SERVICE_ACCOUNT")
+if creds_env:
+    gc = gspread.service_account_from_dict(json.loads(creds_env))
+else:
+    gc = gspread.service_account(filename="credenciais.json")
 sh = gc.open_by_key(SHEET_ID)
 ws = sh.worksheet(ABA)
 
@@ -255,6 +262,8 @@ colunas_pct = [i for i, c in enumerate(df_resumo.columns, start=1) if c.endswith
 for col_idx in colunas_pct:
     letra = gspread.utils.rowcol_to_a1(1, col_idx).rstrip("0123456789")
     ws_resumo.format(f"{letra}{LINHA_DADOS}:{letra}{ultima_linha}", {"numberFormat": {"type": "PERCENT", "pattern": "0.0%"}})
+
+print(f"Enviado para a aba 'resumo': {len(df_resumo)} linhas")
 
 print(f"Enviado para a aba 'resumo': {len(df_resumo)} linhas")
 
