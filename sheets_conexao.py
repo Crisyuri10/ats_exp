@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime, timedelta, timezone
 import gspread
 import pandas as pd
 
@@ -204,6 +205,10 @@ for col in ["tempo_criacao_pacote", "tempo_espera_picking", "tempo_coleta", "tem
 df_envio = df_envio.fillna("")
 # data_exp_2 = so a data, em ISO (aaaa-mm-dd) para o Sheets em locale en_US gravar como data real
 df_envio.insert(1, "data_exp_2", df["data_exp"].dt.strftime("%Y-%m-%d"))
+# data_atualizacao = momento em que este ETL rodou, no horario de Brasilia (UTC-3, sem horario de verao).
+# o GitHub Actions roda em UTC, por isso a conversao explicita; ISO para o Sheets (en_US) gravar como data real
+agora_brasilia = datetime.now(timezone(timedelta(hours=-3)))
+df_envio["data_atualizacao"] = agora_brasilia.strftime("%Y-%m-%d %H:%M:%S")
 
 ws_etl = sh.worksheet("etl")
 ws_etl.clear()
@@ -219,7 +224,10 @@ ws_etl.batch_format([
     for i in colunas_tempo
 ])
 ws_etl.format(f"B2:B{len(df_envio) + 1}", {"numberFormat": {"type": "DATE", "pattern": "dd/mm/yyyy"}})
-print(f"Enviado para a aba 'etl': {len(df_envio)} linhas")
+col_atualizacao = gspread.utils.rowcol_to_a1(1, len(df_envio.columns)).rstrip("1")
+ws_etl.format(f"{col_atualizacao}2:{col_atualizacao}{len(df_envio) + 1}",
+              {"numberFormat": {"type": "DATE_TIME", "pattern": "dd/mm/yyyy hh:mm:ss"}})
+print(f"Enviado para a aba 'etl': {len(df_envio)} linhas (atualizado em {agora_brasilia:%d/%m/%Y %H:%M:%S})")
 
 # ===== 6. Resumo diario de SLAs para a aba "etl_resumo" =====
 # uma linha por dia de data_exp, sem colunas separadoras (facilita importar em ferramentas de BI).
