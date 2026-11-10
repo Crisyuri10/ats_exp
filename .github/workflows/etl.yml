@@ -2,26 +2,27 @@ name: ETL Sheets
 
 on:
   schedule:
-    - cron: "30 8 * * *"   # 05:30 BRT
-    - cron: "0 10 * * *"   # 07:00 BRT
-    - cron: "0 12 * * *"   # 09:00 BRT
-    - cron: "0 14 * * *"   # 11:00 BRT
-    - cron: "30 16 * * *"  # 13:30 BRT
-    - cron: "30 19 * * *"  # 16:30 BRT
-    - cron: "0 20 * * *"   # 17:00 BRT
-    - cron: "0 23 * * *"   # 20:00 BRT
-    - cron: "0 1 * * *"    # 22:00 BRT
+    # a cada 10 minutos, 24 horas por dia (o GitHub pode atrasar alguns minutos)
+    - cron: "*/10 * * * *"
   workflow_dispatch:
+
+# se uma execucao atrasar e a proxima comecar antes dela terminar, cancela a antiga
+# (evita duas execucoes gravando na aba etl ao mesmo tempo)
+concurrency:
+  group: etl-sheets
+  cancel-in-progress: true
 
 jobs:
   etl:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
