@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Drive Expedição</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #ffffff;
+  --surface: #ffffff;
+  --ink-1: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11,11,11,0.10);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --bar: #2a78d6;
+  --bar-2: #86b6ef;
+  --critical: #d03b3b;
+  --tt-bg: #0b0b0b;
+  --tt-ink: #f0efec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink-1: #f0efec; --ink-2: #c3c2b7; --ink-3: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    --bar: #3987e5; --bar-2: #1c5cab; --critical: #e66767; --tt-bg: #f0efec; --tt-ink: #0b0b0b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink-1: #f0efec; --ink-2: #c3c2b7; --ink-3: #898781;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  --bar: #3987e5; --bar-2: #1c5cab; --critical: #e66767; --tt-bg: #f0efec; --tt-ink: #0b0b0b;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink-1); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { padding: 24px 24px 48px; }
+/* topo em 3 colunas: titulo | data da ultima atualizacao (centro) | espaco */
+header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+h1 { font-size: 22px; margin: 0; font-weight: 650; }
+.atualizacao { display: flex; flex-direction: column; align-items: center; padding: 6px 18px; border-radius: 6px;
+  background: color-mix(in srgb, var(--ink-1) 5%, var(--surface)); }
+.atualizacao .rot { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
+.atualizacao #gerado { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+h2 { font-size: 15px; margin: 0 0 4px; font-weight: 650; }
+.sub { color: var(--ink-2); font-size: 13px; }
+.muted { color: var(--ink-3); font-size: 12px; }
+.filtros { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 18px 0 20px; }
+.filtros label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-2); }
+select, input[type=date], button { font: inherit; color: var(--ink-1); background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 6px 10px; }
+button { cursor: pointer; }
+/* filtros: cantos menos arredondados e lista do dia mais larga */
+.filtros select, .filtros button { border-radius: 3px; }
+#f-dia { min-width: 200px; }
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; }
+.grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi .rot { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.kpi .val { font-size: 30px; font-weight: 650; margin: 2px 0; }
+.kpi .det { font-size: 12px; color: var(--ink-3); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.secao { margin-top: 16px; }
+.duas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 860px) { .duas { grid-template-columns: 1fr; } }
+.etapas { margin-top: 12px; }
+.grupo { font-size: 12px; color: var(--ink-3); margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
+.etapa { display: grid; grid-template-columns: 170px 1fr 64px; align-items: center; gap: 8px; padding: 3px 0; border-radius: 6px; }
+.etapa:hover, .etapa:focus { background: color-mix(in srgb, var(--ink-1) 5%, transparent); outline: none; }
+.etapa .nome { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etapa .trilho { position: relative; height: 14px; }
+.etapa .barra { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 0 4px 4px 0; }
+.etapa .p90 { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink-3); border-radius: 1px; }
+.etapa .valor { font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+.legenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+/* nome do status na tabela como etiqueta com fundo na cor do status */
+.chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.leg-p90 { width: 2px; height: 12px; background: var(--ink-3); display: inline-block; }
+.grafico { width: 100%; margin-top: 8px; }
+.grafico svg { display: block; width: 100%; overflow: visible; }
+.grafico text { fill: var(--ink-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.grafico .rotulo { fill: var(--ink-2); font-size: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--ink-2); font-weight: 600; font-size: 12px; cursor: pointer; user-select: none; }
+th.ord::after { content: " ▾"; }
+th.ord.asc::after { content: " ▴"; }
+td.pior { color: var(--critical); font-weight: 600; }
+.tabela-rolagem { overflow-x: auto; margin-top: 8px; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
+#tt { position: fixed; pointer-events: none; background: var(--tt-bg); color: var(--tt-ink); padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.5; opacity: 0; transition: opacity .1s; z-index: 10; max-width: 280px; }
+#tt b { font-weight: 650; }
+.nota { font-size: 12px; color: var(--ink-3); margin-top: 24px; }
+.cab-card { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--ring); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 6px 12px; background: var(--surface); color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--ring); }
+.seg button.ativo { background: var(--ink-1); color: var(--surface); }
+.multiplos { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px 24px; margin-top: 16px; }
+.mini-tit { font-size: 13px; font-weight: 600; }
+.mini-tit span { font-weight: 400; margin-left: 4px; }
+.mini-g svg { display: block; width: 100%; }
+.mini-g text { fill: var(--ink-3); font-size: 10px; font-variant-numeric: tabular-nums; }
+.tabelas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.tabelas > * { min-width: 0; }
+.coluna-tabelas { display: flex; flex-direction: column; gap: 16px; }
+#tab-status tr.expansivel { cursor: pointer; }
+#tab-status tr.expansivel:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }
+#tab-status tr.detalhe td { font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--s1) 5%, var(--surface)); padding-top: 4px; padding-bottom: 4px; }
+#tab-status tr.detalhe td:first-child { padding-left: 36px; }
+#tab-status .seta { display: inline-block; width: 14px; color: var(--ink-3); }
+#tab-status tr.detalhe.cab td { color: var(--ink-3); font-weight: 600; font-size: 11px; }
+/* a tabela ocupa a largura que precisa (sem rolagem); o grafico fica com o restante */
+/* grafico a esquerda, tabela a direita; em tela estreita a tabela rola dentro do cartao e o grafico mantem pelo menos 320px */
+/* teste: grafico em cima, tabela embaixo (para voltar lado a lado: minmax(320px, 1fr) minmax(0, max-content)) */
+.visao { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.visao > * { min-width: 0; }
+#tab-status th.grp { text-align: center; border-left: 1px solid var(--axis); }
+#tab-status tr.sub th { text-align: right; }
+#tab-status td.ini, #tab-status th.ini { border-left: 1px solid var(--grid); }
+/* celulas sem fundo por responsavel/status: a cor do responsavel fica so no cabecalho */
+#tab-status td.pct-total { min-width: 115px; --barra-pct: color-mix(in srgb, var(--s1) 30%, var(--surface)); }
+/* tabela no tamanho do conteudo (colunas juntas), sem esticar na largura do cartao */
+#tab-status { width: 100%; }
+/* tabela ocupa toda a largura que sobra ao lado dos KPIs */
+.linha-tabela > .bloco-tabela { flex: 1; width: auto; }
+#tab-status th, #tab-status td { padding-left: 8px; padding-right: 8px; }
+/* bloco titulo+filtro+tabela com a largura da tabela, para o filtro ficar na borda direita dela */
+.bloco-tabela { width: fit-content; max-width: 100%; }
+/* KPIs sempre ao lado da tabela (sem quebrar linha); se faltar espaco, a tabela rola dentro dela */
+.linha-tabela { display: flex; gap: 20px; align-items: flex-start; flex-wrap: nowrap; }
+.linha-tabela > .bloco-tabela { min-width: 0; }
+/* titulo dos KPIs na altura do titulo da tabela; min-height alinha o 1o KPI com o cabecalho da tabela */
+.kpis-resp { display: flex; flex-direction: column; gap: 16px; width: 280px; flex: none; }
+.kpis-resp .tit-tabela { margin: 0; min-height: 46px; padding-top: 12px; }
+:root { --cor-dhl: color-mix(in srgb, var(--s4) 22%, var(--surface)); --cor-transp: color-mix(in srgb, var(--ink-1) 5%, var(--surface)); }
+.kpi-resp { border-radius: 6px; padding: 16px 18px; background: var(--cor-transp); }
+.kpi-resp.dhl { background: var(--cor-dhl); }
+.kpi-resp .rot { font-size: 13px; font-weight: 650; letter-spacing: .03em; color: var(--ink-2); }
+.kpi-resp .val { font-size: 36px; font-weight: 700; line-height: 1.1; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+.kpi-resp .det { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+#tab-status td.tempo { min-width: 125px; --barra-tempo: color-mix(in srgb, var(--s1) 30%, var(--surface)); }
+.cab-tabela { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+#tab-status td.tot { font-weight: 650; }
+#tab-status td.tempo { font-weight: 600; }
+#tab-status td.etapa-desc { text-align: left; font-size: 12px; line-height: 1.3; padding-left: 4px; }
+#tab-status td.etapa-desc div { width: 145px; white-space: normal; }
+/* sem bordas: cartoes sem contorno e tabela sem divisorias verticais */
+.card { border: 0; }
+#tab-status td.ini, #tab-status th.ini, #tab-status th.grp { border-left: 0; }
+#tab-status td.etapa-desc .muted { font-size: 11px; }
+/* cabecalho: so o grupo DHL tem fundo (amarelo); os demais ficam sem fundo */
+#tab-status th { background: var(--surface); }
+/* cabecalhos com as mesmas cores dos KPIs (DHL amarelo claro, transporte cinza claro) */
+#tab-status th.h-DHL { background: var(--cor-dhl); }
+#tab-status th.h-TRANSPORTE { background: var(--cor-transp); }
+.mini-g text.rotulo-seg { font-size: 11px; font-weight: 600; }
+/* o grafico fica sempre a direita da tabela; so empilha em tela de celular */
+@media (max-width: 1100px) { .tabelas { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .visao { grid-template-columns: 1fr !important; } }
+.tit-tabela { text-transform: uppercase; letter-spacing: .03em; font-size: 13px; color: var(--ink-2); }
+.tab-resumo th { cursor: default; background: color-mix(in srgb, var(--s1) 14%, var(--surface)); color: var(--ink-1); border-bottom: 1px solid var(--axis); }
+.tab-resumo tr.total td { font-weight: 650; border-top: 1px solid var(--axis); background: color-mix(in srgb, var(--ink-1) 4%, transparent); }
+.mini-g .barra-p { fill: var(--bar); }
+.mini-g text.rotulo-barra { fill: var(--ink-2); font-size: 11px; }
+.mini-g .alvo:hover + .barra-p, .mini-g .barra-p.foco { fill: var(--bar-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Painel Drive Expedição</h1>
+    <!-- data/hora em que o ETL rodou, centralizada no topo -->
+    <div class="atualizacao"><span class="rot">Data última atualização</span><span id="gerado"></span></div>
+    <div></div>
+  </header>
+
+  <div class="visao secao">
+    <div class="card">
+      <h2 class="tit-tabela">Planejamento diário de pedidos</h2>
+      <div class="legenda" id="leg-pedidos"></div>
+      <div class="mini-g" id="g-pedidos" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <div class="linha-tabela">
+      <!-- KPIs de participacao por responsavel, a esquerda da tabela (seguem o filtro do dia) -->
+      <div class="kpis-resp" id="kpis-resp"></div>
+      <div class="bloco-tabela">
+      <div class="cab-tabela">
+        <div>
+          <h2 class="tit-tabela">Pedidos por status TU e responsável</h2>
+          <div class="muted">Tempo médio da etapa: só nos status de transporte</div>
+        </div>
+        <!-- filtro do dia: vale so para esta tabela -->
+        <div class="filtros" style="margin:0">
+          <label>Dia de expedição <select id="f-dia"><option value="">Todos</option></select></label>
+          <button id="f-limpar">Limpar filtros</button>
+        </div>
+      </div>
+      <div class="tabela-rolagem"><table class="tab-resumo" id="tab-status"></table></div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+<div id="tt" role="status"></div>
+
+<script id="dados" type="application/json">__DADOS__</script>
+<script>
+const D = JSON.parse(document.getElementById("dados").textContent);
+// posicoes de cada campo dentro da linha montada pelo gerar_painel.py
+const I = { dia: 0, tr: 1, status: 2, sla: 3, tempo: 8, flags: 23, chave: 24, pedidos: 25 };
+const SLAS = [
+  { nome: "ATS (puxada)", curto: "ATS", cor: "var(--s1)" },
+  { nome: "Carregamento", curto: "Carreg.", cor: "var(--s2)" },
+  { nome: "Expedição", curto: "Exped.", cor: "var(--s3)" },
+  { nome: "Veículos (chegada doca)", curto: "Veículos", cor: "var(--s4)" },
+  { nome: "Faturamento", curto: "Fat.", cor: "var(--s5)" },
+];
+const ETAPAS = [
+  { k: 0, nome: "Criação TU → pacote", grupo: "Armazém" },
+  { k: 1, nome: "Espera picking", grupo: "Armazém" },
+  { k: 2, nome: "Coleta", grupo: "Armazém" },
+  { k: 3, nome: "Conferência", grupo: "Armazém" },
+  { k: 4, nome: "Faturamento", grupo: "Armazém" },
+  { k: 5, nome: "Puxada (fat. → ATS)", grupo: "Armazém" },
+  { k: 6, nome: "Espera consolidação", grupo: "Armazém" },
+  { k: 7, nome: "Consolidação", grupo: "Armazém" },
+  { k: 8, nome: "Check-in → doca", grupo: "Veículo" },
+  { k: 9, nome: "Espera carregamento", grupo: "Veículo" },
+  { k: 10, nome: "Carregamento", grupo: "Veículo" },
+  { k: 11, nome: "Saída do veículo", grupo: "Veículo" },
+];
+const T_ATS = 12, T_ANTES = 13, T_DEPOIS = 14;
+
+// ===== utilitarios =====
+const $ = id => document.getElementById(id);
+const nf1 = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtPct = v => v == null ? "—" : nf1.format(v * 100) + "%";
+const fmtInt = n => n.toLocaleString("pt-BR");
+function fmtMin(m) {
+  if (m == null || isNaN(m)) return "—";
+  const sinal = m < 0 ? "-" : "";
+  m = Math.round(Math.abs(m));
+  const h = Math.floor(m / 60), mm = m % 60;
+  return sinal + (h ? `${h}h${String(mm).padStart(2, "0")}` : `${mm} min`);
+}
+function quantil(arr, q) {
+  if (!arr.length) return null;
+  const a = [...arr].sort((x, y) => x - y), p = (a.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p);
+  return a[lo] + (a[hi] - a[lo]) * (p - lo);
+}
+const media = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+const tempos = (rows, k) => rows.map(r => r[I.tempo + k]).filter(v => v != null);
+const fmtDia = d => d.slice(8, 10) + "/" + d.slice(5, 7);
+function slaStats(rows, i) {
+  const c = [0, 0, 0];
+  rows.forEach(r => c[r[I.sla + i]]++);
+  return { dentro: c[0], fora: c[1], aberto: c[2], pct: c[0] + c[1] ? c[0] / (c[0] + c[1]) : null };
+}
+
+const tt = $("tt");
+function mostrarTT(html, x, y) {
+  tt.innerHTML = html; tt.style.opacity = 1;
+  const w = tt.offsetWidth, h = tt.offsetHeight;
+  tt.style.left = Math.min(x + 14, innerWidth - w - 8) + "px";
+  tt.style.top = Math.max(8, y - h - 12) + "px";
+}
+const esconderTT = () => { tt.style.opacity = 0; };
+
+// ===== filtros =====
+const selDia = $("f-dia");
+// lista suspensa com cada dia de expedicao presente nos dados (dd/mm/aaaa)
+[...new Set(D.linhas.map(r => r[I.dia]))].sort().forEach(d =>
+  selDia.add(new Option(`${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`, d)));
+// a tabela abre filtrada no dia atual; se hoje nao tiver dados, no ultimo dia ate hoje
+const agora = new Date();
+const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+const diaInicial = [...selDia.options].map(o => o.value).filter(v => v && v <= hoje).pop();
+if (diaInicial) selDia.value = diaInicial;
+$("gerado").textContent = D.gerado;
+function filtrar() {
+  const dia = selDia.value;
+  return D.linhas.filter(r => !dia || r[I.dia] === dia);
+}
+
+// ===== etapas =====
+function statsEtapas(rows) {
+  return ETAPAS.map(e => {
+    const v = tempos(rows, e.k);
+    return { ...e, n: v.length, med: quantil(v, .5), p90: quantil(v, .9), media: media(v) };
+  });
+}
+function renderEtapas(rows) {
+  const st = statsEtapas(rows);
+  const max = Math.max(1, ...st.map(s => s.p90 || 0));
+  let html = "", grupo = "";
+  st.forEach(s => {
+    if (s.grupo !== grupo) { grupo = s.grupo; html += `<div class="grupo">${grupo}</div>`; }
+    const w = s.med == null ? 0 : (s.med / max) * 100, p = s.p90 == null ? null : (s.p90 / max) * 100;
+    html += `<div class="etapa" tabindex="0" data-k="${s.k}">
+      <div class="nome" title="${s.nome}">${s.nome}</div>
+      <div class="trilho"><div class="barra" style="width:${w}%"></div>${p == null ? "" : `<div class="p90" style="left:calc(${p}% - 1px)"></div>`}</div>
+      <div class="valor">${fmtMin(s.med)}</div></div>`;
+  });
+  $("etapas").innerHTML = html;
+  $("etapas").querySelectorAll(".etapa").forEach(el => {
+    const s = st.find(x => x.k === +el.dataset.k);
+    const info = `<b>${s.nome}</b><br>Mediana: ${fmtMin(s.med)}<br>Média: ${fmtMin(s.media)}<br>P90: ${fmtMin(s.p90)}<br>${fmtInt(s.n)} TUs com tempo`;
+    el.onmousemove = ev => mostrarTT(info, ev.clientX, ev.clientY);
+    el.onmouseleave = esconderTT;
+    el.onfocus = () => { const b = el.getBoundingClientRect(); mostrarTT(info, b.left + 170, b.top); };
+    el.onblur = esconderTT;
+  });
+  $("tab-etapas").innerHTML = `<tr><th>Etapa</th><th>Mediana</th><th>Média</th><th>P90</th><th>TUs</th></tr>` +
+    st.map(s => `<tr><td>${s.nome}</td><td>${fmtMin(s.med)}</td><td>${fmtMin(s.media)}</td><td>${fmtMin(s.p90)}</td><td>${fmtInt(s.n)}</td></tr>`).join("");
+}
+
+// ===== tempo de cada processo por periodo (barras) =====
+let granul = "dia";
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+function chavePeriodo(dia) {
+  if (granul === "dia") return dia;
+  if (granul === "mes") return dia.slice(0, 7);
+  // semana comeca na segunda-feira
+  const [a, m, d] = dia.split("-").map(Number);
+  const dt = new Date(a, m - 1, d);
+  dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+function rotuloPeriodo(p, longo) {
+  if (granul === "mes") return MESES[+p.slice(5, 7) - 1] + "/" + p.slice(2, 4);
+  if (granul === "semana") return (longo ? "Semana de " : "") + fmtDia(p);
+  return fmtDia(p);
+}
+// teto "redondo" para o eixo y, em minutos
+function tetoEixo(v) {
+  const passos = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 300, 360, 480, 600, 720, 960, 1200, 1440];
+  return passos.find(p => p >= v) || Math.ceil(v / 1440) * 1440;
+}
+// teto "redondo" para eixos de contagem (1, 2, 2.5, 5 x potencia de 10)
+function tetoContagem(v) {
+  const e = Math.pow(10, Math.floor(Math.log10(Math.max(1, v))));
+  return [1, 2, 2.5, 5, 10].map(f => f * e).find(x => x >= v);
+}
+// opcoes: fmt (rotulo do eixo), teto (funcao de escala), H (altura), tt (html do tooltip por indice)
+function desenharBarras(el, ps, vals, opcoes = {}) {
+  const fmtEixo = opcoes.fmt || fmtMin, escala = opcoes.teto || tetoEixo;
+  // com rotulos, abre espaco no topo para o valor da barra mais alta
+  const W = Math.max(260, el.clientWidth), H = opcoes.H || 150, m = { t: opcoes.rotulos ? 20 : 8, r: 4, b: 20, l: 46 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const topo = escala(Math.max(1, ...vals.map(v => v.med || 0)));
+  const y = v => m.t + ih - (v / topo) * ih;
+  const passo = iw / Math.max(1, ps.length);
+  const bw = Math.max(1, Math.min(48, passo - 2));
+  let svg = `<svg viewBox="0 0 ${W} ${H}" height="${H}">`;
+  [0, topo / 2, topo].forEach(t => {
+    svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" stroke="${t ? "var(--grid)" : "var(--axis)"}" stroke-width="1"/>`;
+    svg += `<text x="${m.l - 6}" y="${y(t) + 3}" text-anchor="end">${t ? fmtEixo(t) : "0"}</text>`;
+  });
+  const cadaRotulo = Math.max(1, Math.ceil(ps.length / Math.floor(iw / 44)));
+  ps.forEach((p, i) => {
+    const cx = m.l + passo * i + passo / 2, x0 = cx - bw / 2, v = vals[i].med;
+    svg += `<rect class="alvo" data-i="${i}" x="${m.l + passo * i}" y="${m.t}" width="${passo}" height="${ih}" fill="transparent"/>`;
+    if (v != null && v > 0) {
+      const yt = y(v), r = Math.min(4, bw / 2, m.t + ih - yt), y0 = m.t + ih;
+      svg += `<path class="barra-p" d="M${x0},${y0}V${yt + r}Q${x0},${yt} ${x0 + r},${yt}H${x0 + bw - r}Q${x0 + bw},${yt} ${x0 + bw},${yt + r}V${y0}Z" pointer-events="none"/>`;
+      // rotulo so quando a barra e larga o bastante para o numero nao encavalar no vizinho
+      if (opcoes.rotulos && passo >= 34) svg += `<text class="rotulo-barra" x="${cx}" y="${yt - 5}" text-anchor="middle" pointer-events="none">${fmtEixo(v)}</text>`;
+    } else {
+      svg += `<g></g>`;
+    }
+    if (i % cadaRotulo === 0) svg += `<text x="${cx}" y="${H - 6}" text-anchor="middle">${rotuloPeriodo(p, false)}</text>`;
+  });
+  el.innerHTML = svg + "</svg>";
+  el.querySelectorAll(".alvo").forEach(a => {
+    const i = +a.dataset.i;
+    const html = opcoes.tt ? opcoes.tt(i)
+      : `<b>${rotuloPeriodo(ps[i], true)}</b><br>Mediana: ${fmtMin(vals[i].med)}<br>${fmtInt(vals[i].n)} TUs com tempo`;
+    a.onmousemove = ev => mostrarTT(html, ev.clientX, ev.clientY);
+    a.onmouseleave = esconderTT;
+  });
+}
+function renderProcessos(rows) {
+  const por = {};
+  rows.forEach(r => { const p = chavePeriodo(r[I.dia]); (por[p] = por[p] || []).push(r); });
+  const ps = Object.keys(por).sort();
+  const vals = ETAPAS.map(e => ps.map(p => { const v = tempos(por[p], e.k); return { med: quantil(v, .5), n: v.length }; }));
+  const box = $("multiplos");
+  box.innerHTML = ETAPAS.map(e => `<div><div class="mini-tit">${e.nome}<span class="muted">${e.grupo}</span></div><div class="mini-g"></div></div>`).join("");
+  box.querySelectorAll(".mini-g").forEach((el, j) => desenharBarras(el, ps, vals[j]));
+  $("tab-multiplos").innerHTML = `<tr><th>Período</th>${ETAPAS.map(e => `<th>${e.nome}</th>`).join("")}</tr>` +
+    ps.map((p, i) => `<tr><td>${rotuloPeriodo(p, true)}</td>${vals.map(v => `<td>${fmtMin(v[i].med)}</td>`).join("")}</tr>`).join("");
+}
+// ===== status da TU, na ordem do processo (base -> topo do empilhado) =====
+// resp: DHL ate FATURADA; de EM DOCA E FATURADA em diante e TRANSPORTE.
+// txt = cor do rotulo dentro do segmento (escuro sobre cores claras)
+const STATUS = [
+  { nome: "AG. PACOTE", cor: "#4cc3f0", txt: "#0b0b0b", resp: "DHL" },
+  { nome: "PACOTE CRIADO", cor: "#3b82f6", txt: "#fff", resp: "DHL" },
+  { nome: "EM COLETA", cor: "#22228f", txt: "#fff", resp: "DHL" },
+  { nome: "COLETADA", cor: "#8fb1f5", txt: "#0b0b0b", resp: "DHL" },
+  { nome: "CONFERIDA", cor: "#f07a2a", txt: "#0b0b0b", resp: "DHL" },
+  { nome: "FATURADA", cor: "#6a0f7a", txt: "#fff", resp: "DHL" },
+  { nome: "EM DOCA E FATURADA", cor: "#d946a8", txt: "#fff", resp: "TRANSPORTE" },
+  { nome: "EM CONSOLIDAÇÃO", cor: "#7c4dcc", txt: "#fff", resp: "TRANSPORTE" },
+  { nome: "AG. CARREGAMENTO", cor: "#d4b02a", txt: "#0b0b0b", resp: "TRANSPORTE" },
+  { nome: "CARREGANDO", cor: "#e0453c", txt: "#fff", resp: "TRANSPORTE" },
+  { nome: "CAR. FINALIZADO", cor: "#1f6b6b", txt: "#fff", resp: "TRANSPORTE" },
+  { nome: "EXPEDIDO", cor: "#6dbb84", txt: "#0b0b0b", resp: "TRANSPORTE" },
+  { nome: "OUTROS", cor: "#898781", txt: "#fff", resp: "TRANSPORTE" },
+];
+const RESPONSAVEIS = ["DHL", "TRANSPORTE"];
+const normStatus = s => String(s).trim().toUpperCase();
+function idxStatus(status) {
+  const g = STATUS.findIndex(x => x.nome === normStatus(status));
+  return g === -1 ? STATUS.length - 1 : g;
+}
+
+function desenharEmpilhado(el, ds, valores, opcoes) {
+  // valores[i][g] = pedidos do dia i no grupo g
+  const W = Math.max(260, el.clientWidth), H = opcoes.H || 230, m = { t: 20, r: 4, b: 20, l: 46 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const totais = valores.map(v => v.reduce((s, x) => s + x, 0));
+  const topo = tetoContagem(Math.max(1, ...totais));
+  const y = v => m.t + ih - (v / topo) * ih;
+  const passo = iw / Math.max(1, ds.length), bw = Math.max(1, Math.min(48, passo - 2)), GAP = 2;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" height="${H}">`;
+  [0, topo / 2, topo].forEach(t => {
+    svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" stroke="${t ? "var(--grid)" : "var(--axis)"}" stroke-width="1"/>`;
+    svg += `<text x="${m.l - 6}" y="${y(t) + 3}" text-anchor="end">${t ? fmtInt(t) : "0"}</text>`;
+  });
+  const cadaRotulo = Math.max(1, Math.ceil(ds.length / Math.floor(iw / 44)));
+  ds.forEach((d, i) => {
+    const cx = m.l + passo * i + passo / 2, x0 = cx - bw / 2;
+    svg += `<rect class="alvo" data-i="${i}" x="${m.l + passo * i}" y="${m.t}" width="${passo}" height="${ih}" fill="transparent"/>`;
+    const ultimo = valores[i].reduce((u, v, g) => (v > 0 ? g : u), -1);
+    let acum = 0;
+    valores[i].forEach((v, g) => {
+      if (v <= 0) return;
+      const yb = y(acum), yt = y(acum + v);
+      acum += v;
+      // 2px de superficie entre segmentos empilhados (exceto o da base)
+      const base = acum - v > 0 && yb - yt > GAP ? yb - GAP : yb;
+      const cor = opcoes.series[g].cor;
+      if (g === ultimo) {
+        const r = Math.min(4, bw / 2, base - yt);
+        svg += `<path d="M${x0},${base}V${yt + r}Q${x0},${yt} ${x0 + r},${yt}H${x0 + bw - r}Q${x0 + bw},${yt} ${x0 + bw},${yt + r}V${base}Z" fill="${cor}" pointer-events="none"/>`;
+      } else {
+        svg += `<rect x="${x0}" y="${yt}" width="${bw}" height="${Math.max(0, base - yt)}" fill="${cor}" pointer-events="none"/>`;
+      }
+      // rotulo dentro do segmento so quando cabe
+      if (base - yt >= 16 && bw >= 30) svg += `<text class="rotulo-seg" x="${cx}" y="${(yt + base) / 2 + 4}" text-anchor="middle" style="fill:${opcoes.series[g].txt}" pointer-events="none">${fmtInt(v)}</text>`;
+    });
+    if (totais[i] > 0 && passo >= 34) svg += `<text class="rotulo-barra" x="${cx}" y="${y(totais[i]) - 5}" text-anchor="middle" pointer-events="none">${fmtInt(totais[i])}</text>`;
+    if (i % cadaRotulo === 0) svg += `<text x="${cx}" y="${H - 6}" text-anchor="middle">${fmtDia(d)}</text>`;
+  });
+  el.innerHTML = svg + "</svg>";
+  el.querySelectorAll(".alvo").forEach(a => {
+    const i = +a.dataset.i, html = opcoes.tt(i);
+    a.onmousemove = ev => mostrarTT(html, ev.clientX, ev.clientY);
+    a.onmouseleave = esconderTT;
+  });
+}
+
+// ===== tabela de tempos de ciclo, na ordem das colunas tempo_* da aba etl =====
+// itens(rows) devolve [tempo em minutos, pedidos da TU] de cada TU com tempo preenchido;
+// k = posicao do tempo na linha do painel (ver TEMPOS em gerar_painel.py)
+const itensK = (rows, k, sinal = 1) => rows.filter(r => r[I.tempo + k] != null).map(r => [sinal * r[I.tempo + k], r[I.pedidos] || 0]);
+const porK = k => rows => itensK(rows, k);
+const TEMPOS_TABELA = [
+  { nome: "Criação de pacote", col: "tempo_criacao_pacote", itens: porK(0) },
+  { nome: "Espera picking", col: "tempo_espera_picking", itens: porK(1) },
+  { nome: "Coleta / picking", col: "tempo_coleta", itens: porK(2) },
+  { nome: "Conferência", col: "tempo_conferencia", itens: porK(3) },
+  { nome: "Faturamento", col: "tempo_faturamento", itens: porK(4) },
+  { nome: "Puxada", col: "tempo_puxada", itens: porK(5) },
+  { nome: "Folga ATS", col: "tempo_ats", itens: porK(12) },
+  { nome: "Espera consolidação", col: "tempo_espera_consolidacao", itens: porK(6) },
+  { nome: "Consolidação", col: "tempo_consolidacao", itens: porK(7) },
+  { nome: "Check-in até doca", col: "tempo_checkin_ate_doca", itens: porK(8) },
+  { nome: "Chegada doca (antes)", col: "tempo_chegada_doca_antes", itens: porK(13) },
+  { nome: "Chegada doca (depois)", col: "tempo_chegada_doca_depois", itens: porK(14) },
+  // geral = depois positivo, antes negativo (mesma regra da coluna da aba etl)
+  { nome: "Chegada doca (geral)", col: "tempo_chegada_doca_geral", itens: rows => itensK(rows, 14).concat(itensK(rows, 13, -1)) },
+  { nome: "Espera carregamento", col: "tempo_espera_carregamento", itens: porK(9) },
+  { nome: "Carregamento", col: "tempo_carregamento", itens: porK(10) },
+  { nome: "Saída veículo", col: "tempo_saida_veiculo", itens: porK(11) },
+];
+function fmtHms(min) {
+  if (min == null || isNaN(min)) return "—";
+  const s = Math.round(Math.abs(min) * 60), p = n => String(n).padStart(2, "0");
+  return (min < 0 ? "-" : "") + `${p(Math.floor(s / 3600))}:${p(Math.floor(s % 3600 / 60))}:${p(s % 60)}`;
+}
+function renderTabelaTempos(rows) {
+  $("tab-tempos").innerHTML = `<tr><th>Etapa operacional</th><th>Tempo médio</th><th>Amostragem (pedidos)</th></tr>` +
+    TEMPOS_TABELA.map(t => {
+      const it = t.itens(rows), v = it.map(x => x[0]), pedidos = it.reduce((s, x) => s + x[1], 0);
+      return `<tr><td title="${t.col}">${t.nome}</td><td>${fmtHms(media(v))}</td><td>${fmtInt(pedidos)}</td></tr>`;
+    }).join("");
+}
+
+// ===== tabela de SLAs, contagem em pedidos (qtde_pedidos das TUs); % no prazo sobre o total (inclui em aberto) =====
+function slaPedidos(rows, i) {
+  const c = [0, 0, 0];  // 0 = dentro, 1 = fora, 2 = em aberto
+  rows.forEach(r => c[r[I.sla + i]] += r[I.pedidos] || 0);
+  return { dentro: c[0], fora: c[1], aberto: c[2], total: c[0] + c[1] + c[2] };
+}
+const SLAS_TABELA = [
+  { i: 4, nome: "SLA Faturamento", col: "sla_faturamento" },
+  { i: 0, nome: "SLA ATS", col: "sla_ats" },
+  { i: 1, nome: "SLA Carregamento", col: "sla_carregamento" },
+  { i: 2, nome: "SLA Expedição", col: "sla_expedicao" },
+  { i: 3, nome: "SLA Veículos", col: "sla_veiculos" },
+];
+function renderTabelaSlas(rows) {
+  const linha = (nome, col, st, cls = "") => `<tr class="${cls}"><td title="${col}">${nome}</td><td>${fmtInt(st.dentro)}</td><td>${fmtInt(st.fora)}</td>
+    <td>${fmtInt(st.aberto)}</td><td>${fmtInt(st.total)}</td><td>${fmtPct(st.total ? st.dentro / st.total : null)}</td></tr>`;
+  const soma = { dentro: 0, fora: 0, aberto: 0, total: 0 };
+  const corpo = SLAS_TABELA.map(s => {
+    const st = slaPedidos(rows, s.i);
+    Object.keys(soma).forEach(k => soma[k] += st[k]);
+    return linha(s.nome, s.col, st);
+  }).join("");
+  $("tab-slas").innerHTML = `<tr><th>Indicador de SLA (pedidos)</th><th>No prazo</th><th>Fora do prazo</th><th>Em aberto</th><th>Total</th><th>% no prazo</th></tr>` +
+    corpo + linha("Total geral / consolidado", "—", soma, "total");
+}
+
+// ===== pedidos por status TU x responsavel (DHL / TRANSPORTE / Total), % sobre o total do recorte =====
+// tempo da etapa de cada status de transporte (o tempo que a TU levou para chegar nesse status);
+// k = posicao do tempo na linha do painel (ver TEMPOS em gerar_painel.py)
+const TEMPO_DO_STATUS = {
+  "EM DOCA E FATURADA": { nome: "Puxada", desc: "fim do faturamento → ATS", k: 5 },
+  "EM CONSOLIDAÇÃO": { nome: "Espera consolidação", desc: "ATS → entrada protocolo NF", k: 6 },
+  "AG. CARREGAMENTO": { nome: "Consolidação", desc: "entrada protocolo NF → fim da consolidação", k: 7 },
+  "CARREGANDO": { nome: "Espera carregamento", desc: "chegada na doca → início do carregamento", k: 9 },
+  "CAR. FINALIZADO": { nome: "Carregamento", desc: "início → fim do carregamento", k: 10 },
+  "EXPEDIDO": { nome: "Saída do veículo", desc: "fim do carregamento → checkout", k: 11 },
+};
+// status expandidos (mostrando transportadoras) sobrevivem a troca de filtro
+const statusAbertos = new Set();
+function renderTabelaStatus(rows) {
+  const ped = {}, porStatus = {}, porResp = { DHL: 0, TRANSPORTE: 0 };
+  rows.forEach(r => {
+    const s = STATUS[idxStatus(r[I.status])].nome, n = r[I.pedidos] || 0;
+    ped[s] = (ped[s] || 0) + n;
+    porResp[STATUS[idxStatus(s)].resp] += n;
+    (porStatus[s] = porStatus[s] || []).push(r);
+  });
+  const total = porResp.DHL + porResp.TRANSPORTE;
+  const pct = n => fmtPct(total ? n / total : null);
+  // EXPEDIDO aparece sempre (mesmo com 0) por ser o status final
+  if (!("EXPEDIDO" in ped)) ped["EXPEDIDO"] = 0;
+  const lista = STATUS.map(x => x.nome).filter(s => s in ped);
+  // celulas de cada responsavel: preenchidas so na coluna do responsavel do status
+  const celulas = (resp, f) => RESPONSAVEIS.map(r => r === resp ? f(r) : `<td class="ini"></td><td></td>`).join("");
+  // tempo medio da etapa do status (so status de transporte), com o descritivo do calculo ao lado
+  // KPIs: quanto cada responsavel representa do total de pedidos do recorte
+  $("kpis-resp").innerHTML = `<h2 class="tit-tabela">Concentração das etapas do pedido</h2>` +
+    RESPONSAVEIS.map(r => `<div class="kpi-resp ${r === "DHL" ? "dhl" : ""}">
+      <div class="rot">${r === "DHL" ? "DHL" : "TRANSPORTE"}</div>
+      <div class="val">${pct(porResp[r])}</div>
+      <div class="det">${fmtInt(porResp[r])} de ${fmtInt(total)} pedidos</div></div>`).join("");
+  // tempo medio da etapa do status, calculado sobre as TUs passadas (status inteiro ou uma transportadora)
+  const mediaDe = (s, rs) => { const t = TEMPO_DO_STATUS[s]; return t ? media(itensK(rs, t.k).map(x => x[0])) : null; };
+  const tempoEtapa = s => {
+    const t = TEMPO_DO_STATUS[s];
+    if (!t) return `<td class="ini"></td><td></td>`;
+    // largura fixa no descritivo para ele quebrar linha em vez de alargar a tabela
+    return `<td class="ini tempo">${fmtHms(mediaDe(s, porStatus[s] || []))}</td>` +
+      `<td class="etapa-desc"><div>${t.nome}<br><span class="muted">${t.desc}</span></div></td>`;
+  };
+  // ao expandir: uma linha por transportadora do status, da maior para a menor em pedidos
+  const transportadoras = (s, resp) => {
+    const porTr = {};
+    (porStatus[s] || []).forEach(r => (porTr[r[I.tr]] = porTr[r[I.tr]] || []).push(r));
+    return Object.entries(porTr)
+      .map(([tr, rs]) => ({ tr, rs, n: rs.reduce((a, r) => a + (r[I.pedidos] || 0), 0) }))
+      .sort((a, b) => b.n - a.n)
+      .map(({ tr, rs, n }) => `<tr class="detalhe"><td>${tr}</td>` +
+        celulas(resp, () => `<td class="ini">${fmtInt(n)}</td><td>${pct(n)}</td>`) +
+        (TEMPO_DO_STATUS[s] ? `<td class="ini">${fmtHms(mediaDe(s, rs))}</td><td></td>` : `<td class="ini"></td><td></td>`) +
+        `<td class="ini">${fmtInt(n)}</td><td>${pct(n)}</td></tr>`).join("");
+  };
+  $("tab-status").innerHTML =
+    `<tr><th rowspan="2">Status TU</th>${RESPONSAVEIS.map(r => `<th class="grp h-${r}" colspan="2">${r}</th>`).join("")}` +
+    `<th class="grp" colspan="2">Tempo médio da etapa</th><th class="grp" colspan="2">Total</th></tr>` +
+    `<tr class="sub">${RESPONSAVEIS.map(r => `<th class="ini h-${r}">Qtd. pedidos</th><th class="h-${r}">%</th>`).join("")}` +
+    `<th class="ini">Tempo</th><th style="text-align:left">Etapa (cálculo)</th>` +
+    `<th class="ini">Qtd. pedidos</th><th>%</th></tr>` +
+    lista.map(s => {
+      const resp = STATUS[idxStatus(s)].resp;
+      const cls = s === "EXPEDIDO" ? "c-exp" : resp === "DHL" ? "c-dhl" : "c-transp";
+      // etiqueta com fundo na mesma cor do status no grafico (texto claro/escuro conforme a cor)
+      const st = STATUS[idxStatus(s)];
+      // seta de expandir so nos status com pedidos no recorte
+      const temTr = (porStatus[s] || []).length > 0, aberto = statusAbertos.has(s);
+      const seta = `<span class="seta">${temTr ? (aberto ? "▾" : "▸") : ""}</span>`;
+      return `<tr class="${temTr ? "expansivel" : ""}" data-s="${s}"><td>${seta}<span class="chip" style="background:${st.cor};color:${st.txt}">${s}</span></td>` +
+        celulas(resp, () => `<td class="ini ${cls}">${fmtInt(ped[s])}</td><td>${pct(ped[s])}</td>`) +
+        tempoEtapa(s) +
+        `<td class="ini tot">${fmtInt(ped[s])}</td>` +
+        `<td class="tot">${pct(ped[s])}</td></tr>` +
+        (aberto && temTr ? transportadoras(s, resp) : "");
+    }).join("") +
+    `<tr class="total"><td>Total</td>${RESPONSAVEIS.map(r => `<td class="ini">${fmtInt(porResp[r])}</td><td>${pct(porResp[r])}</td>`).join("")}` +
+    `<td class="ini"></td><td></td><td class="ini">${fmtInt(total)}</td><td>${total ? "100,0%" : "—"}</td></tr>`;
+  $("tab-status").querySelectorAll("tr.expansivel").forEach(tr => tr.onclick = () => {
+    const s = tr.dataset.s;
+    statusAbertos.has(s) ? statusAbertos.delete(s) : statusAbertos.add(s);
+    renderTabelaStatus(filtrar());
+  });
+}
+
+function renderPedidos(rows) {
+  const por = {};
+  rows.forEach(r => (por[r[I.dia]] = por[r[I.dia]] || []).push(r));
+  const ds = Object.keys(por).sort();
+  const valores = ds.map(d => {
+    const v = STATUS.map(() => 0);
+    por[d].forEach(r => v[idxStatus(r[I.status])] += r[I.pedidos] || 0);
+    return v;
+  });
+  // legenda so com os status presentes no recorte; cada status mantem sempre a mesma cor
+  const presentes = STATUS.map((g, j) => ({ ...g, j })).filter(g => valores.some(v => v[g.j] > 0));
+  $("leg-pedidos").innerHTML = presentes.map(g => `<span><i class="dot" style="background:${g.cor}"></i>${g.nome}</span>`).join("");
+  // altura do grafico = altura do cartao da tabela menos titulo/legenda do cartao do grafico,
+  // para os dois cartoes terminarem alinhados (quando estao lado a lado)
+  const cardTab = $("tab-status").closest(".card"), cardG = $("g-pedidos").closest(".card");
+  const ladoALado = cardTab.offsetTop === cardG.offsetTop;
+  const extra = cardG.offsetHeight - $("g-pedidos").offsetHeight;
+  const H = ladoALado ? Math.max(240, cardTab.offsetHeight - extra) : 360;
+  desenharEmpilhado($("g-pedidos"), ds, valores, {
+    H, series: STATUS,
+    // tooltip do topo para a base, na mesma ordem visual da barra, com subtotal por responsavel
+    tt: i => {
+      const soma = r => STATUS.reduce((s, g, j) => s + (g.resp === r ? valores[i][j] : 0), 0);
+      return `<b>${fmtDia(ds[i])}</b> · ${fmtInt(valores[i].reduce((s, x) => s + x, 0))} pedidos<br>` +
+        STATUS.map((g, j) => valores[i][j] > 0 ? `<i class="dot" style="background:${g.cor}"></i> ${g.nome}: ${fmtInt(valores[i][j])}` : "").filter(Boolean).reverse().join("<br>") +
+        `<br><span style="opacity:.75">DHL: ${fmtInt(soma("DHL"))} · Transporte: ${fmtInt(soma("TRANSPORTE"))}</span>`;
+    },
+  });
+}
+
+
+// ===== transportadoras =====
+const COLS_TR = [
+  { nome: "Transportadora", v: g => g.tr, txt: g => g.tr },
+  { nome: "TUs", v: g => g.n, txt: g => fmtInt(g.n) },
+  ...SLAS.map((s, i) => ({ nome: "SLA " + s.curto, v: g => g.sla[i], txt: g => fmtPct(g.sla[i]), pior: "min" })),
+  { nome: "Check-in → doca", v: g => g.checkin, txt: g => fmtMin(g.checkin), pior: "max" },
+  { nome: "Espera carreg.", v: g => g.espera, txt: g => fmtMin(g.espera), pior: "max" },
+  { nome: "Chegou antes consol.", v: g => g.antes, txt: g => fmtPct(g.antes) },
+];
+let ordem = { col: 1, asc: false };
+function gruposTr(rows) {
+  const por = {};
+  rows.forEach(r => (por[r[I.tr]] = por[r[I.tr]] || []).push(r));
+  return Object.entries(por).map(([tr, rs]) => {
+    const a = tempos(rs, T_ANTES).length, d = tempos(rs, T_DEPOIS).length;
+    return {
+      tr, n: rs.length, sla: SLAS.map((_, i) => slaStats(rs, i).pct),
+      checkin: quantil(tempos(rs, 8), .5), espera: quantil(tempos(rs, 9), .5), antes: a + d ? a / (a + d) : null,
+    };
+  });
+}
+function renderTr(rows) {
+  const gs = gruposTr(rows);
+  const elegiveis = gs.filter(g => g.n >= 20);
+  const piores = COLS_TR.map(c => {
+    if (!c.pior) return null;
+    const vs = elegiveis.map(c.v).filter(v => v != null);
+    return vs.length > 1 ? (c.pior === "min" ? Math.min(...vs) : Math.max(...vs)) : null;
+  });
+  const c = COLS_TR[ordem.col];
+  gs.sort((a, b) => {
+    const va = c.v(a), vb = c.v(b);
+    if (va == null) return 1; if (vb == null) return -1;
+    return (va < vb ? -1 : va > vb ? 1 : 0) * (ordem.asc ? 1 : -1);
+  });
+  $("tab-tr").innerHTML = `<tr>${COLS_TR.map((cc, j) => `<th data-j="${j}" class="${j === ordem.col ? "ord" + (ordem.asc ? " asc" : "") : ""}">${cc.nome}</th>`).join("")}</tr>` +
+    gs.map(g => `<tr>${COLS_TR.map((cc, j) => {
+      const pior = piores[j] != null && g.n >= 20 && cc.v(g) === piores[j];
+      return `<td class="${pior ? "pior" : ""}">${pior ? "▼ " : ""}${cc.txt(g)}</td>`;
+    }).join("")}</tr>`).join("");
+  $("tab-tr").querySelectorAll("th").forEach(th => th.onclick = () => {
+    const j = +th.dataset.j;
+    ordem = { col: j, asc: ordem.col === j ? !ordem.asc : j === 0 };
+    renderTr(filtrar());
+  });
+}
+
+// ===== orquestracao =====
+// por enquanto o painel mostra so o bloco de pedidos; renderEtapas, renderProcessos e renderTr
+// ficam disponiveis para voltar com os outros blocos (precisam do HTML correspondente)
+function render() {
+  const rows = filtrar();
+  // renderTabelaTempos e renderTabelaSlas ficam disponiveis, mas as tabelas foram retiradas da visao
+  // a tabela primeiro: ela define a largura que sobra para o grafico
+  // o filtro de dia vale so para a tabela; o grafico mostra sempre todos os dias
+  renderTabelaStatus(rows); renderPedidos(D.linhas);
+}
+selDia.onchange = render;
+$("f-limpar").onclick = () => { selDia.value = ""; render(); };
+let tempoResize;
+addEventListener("resize", () => { clearTimeout(tempoResize); tempoResize = setTimeout(render, 150); });
+render();
+</script>
+</body>
+</html>
