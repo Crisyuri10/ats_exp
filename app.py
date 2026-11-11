@@ -1,4 +1,4 @@
-"""Painel Drive Expedição no Streamlit (painel principal).
+"""One page Drive Expedição no Streamlit (painel principal).
 
 A cada 2 minutos (sem botão): lê a Sheet1, aplica o tratamento do sheets_conexao.py, grava as abas etl e
 resumo e mostra o painel. O cache é compartilhado entre todos que estão com o app aberto, então o ETL roda
@@ -29,10 +29,21 @@ TEMPOS = [
 COD_SLA = {"dentro_do_prazo": 0, "fora_do_prazo": 1, "em_aberto": 2}
 # datas que, quando passam do checkout, indicam célula arrastada no Sheets (bit de cada uma no campo de flags)
 ARRASTO = {"data_carregamento": 1, "data_consolidacao": 2, "data_chegada_doca": 4, "data_inicio_carregamento": 8}
+# etapas de transporte do histórico (mesma ordem do painel) e as duas datas de cada uma;
+# serve para explicar por que a etapa ficou sem tempo
+ETAPAS_MOTIVO = [
+    ("tempo_puxada", "data_fim_faturamento", "data_ats"),
+    ("tempo_espera_consolidacao", "data_ats", "data_espera_consolidacao"),
+    ("tempo_consolidacao", "data_espera_consolidacao", "data_consolidacao"),
+    ("tempo_espera_carregamento", "data_chegada_doca", "data_inicio_carregamento"),
+    ("tempo_carregamento", "data_inicio_carregamento", "data_carregamento"),
+    ("tempo_saida_veiculo", "data_carregamento", "data_checkout"),
+]
 
 
 # ===== 2. Montagem dos dados do painel =====
-# cada linha: [dia, transportador, status, 5 SLAs, 15 tempos (min), flags, chave, pedidos]
+# cada linha: [dia, transportador, status, 5 SLAs, 15 tempos (min), flags, chave, pedidos, motivos sem tempo,
+#              TU, datas das etapas de transporte (DATAS_POPUP)]
 def minutos(td):
     # Timedelta -> minutos com 1 casa; trunca no segundo como a aba etl, para dar o mesmo valor
     if pd.isna(td):
@@ -49,6 +60,39 @@ def pedidos(v):
         return 0
 
 
+# datas das etapas de transporte enviadas ao painel para o popup de divergências
+# (ordem usada no painel_template.html, em DATAS_POPUP)
+DATAS_POPUP = [
+    "data_fim_faturamento", "data_ats", "data_espera_consolidacao", "data_consolidacao",
+    "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout",
+]
+
+
+def texto_data(v):
+    # "aaaa-mm-dd hh:mm:ss" (ordena como texto, o painel compara e formata); vazio quando não apontada
+    return "" if pd.isna(v) else v.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def texto_tu(v):
+    # número da TU como texto, sem ".0" quando vier como número da planilha
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v).strip()
+
+
+def motivos(r):
+    # um caractere por etapa de ETAPAS_MOTIVO: 0 = tem tempo, 1 = falta data, 2 = datas fora de ordem / após checkout
+    cod = ""
+    for tempo, ini, fim in ETAPAS_MOTIVO:
+        if pd.notna(r[tempo]):
+            cod += "0"
+        elif pd.isna(r[ini]) or pd.isna(r[fim]):
+            cod += "1"
+        else:
+            cod += "2"
+    return cod
+
+
 def montar_dados(df, agora):
     flags = pd.Series(0, index=df.index)
     for col, bit in ARRASTO.items():
@@ -60,7 +104,8 @@ def montar_dados(df, agora):
             [r["data_exp"].strftime("%Y-%m-%d"), str(r["transportador"]), str(r["status_tu"])]
             + [COD_SLA.get(r[s], 2) for s in SLAS]
             + [minutos(r[c]) for c in TEMPOS]
-            + [int(flags[i]), str(r["chave"]), pedidos(r["qtde_pedidos"])]
+            + [int(flags[i]), str(r["chave"]), pedidos(r["qtde_pedidos"]), motivos(r),
+               texto_tu(r["TU"]), [texto_data(r[c]) for c in DATAS_POPUP]]
         )
     return {"gerado": agora.strftime("%d/%m/%Y %H:%M"), "linhas": linhas}
 
@@ -88,7 +133,7 @@ def carregar_dados():
 
 
 # ===== 4. Página =====
-st.set_page_config(page_title="Painel Drive Expedição", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="One page Drive Expedição", layout="wide", initial_sidebar_state="collapsed")
 # esconde o cabeçalho/menu do Streamlit e as margens, para o painel ocupar a página inteira
 st.markdown(
     """<style>
