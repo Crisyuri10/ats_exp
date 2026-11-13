@@ -1,7 +1,9 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no" class="notranslate">
 <head>
 <meta charset="utf-8">
+<!-- o painel ja esta em portugues: impede o tradutor automatico do Chrome de "traduzir" os textos -->
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One page Drive Expedição</title>
 <!-- fonte Inter: numeros de largura igual (alinham nas colunas) e boa leitura em tamanho pequeno -->
@@ -68,6 +70,8 @@ button { cursor: pointer; }
 /* filtros: cantos menos arredondados e lista do dia mais larga */
 .filtros select, .filtros button { border-radius: 3px; }
 #f-dia { min-width: 200px; }
+/* filtro de dia no topo, alinhado a direita do cabecalho */
+.filtro-topo { margin: 0; justify-content: flex-end; }
 .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; }
 .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
 .kpi .rot { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
@@ -124,7 +128,7 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 .coluna-tabelas { display: flex; flex-direction: column; gap: 16px; }
 #tab-status tr.expansivel { cursor: pointer; }
 #tab-status tr.expansivel:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }
-#tab-status tr.detalhe td { font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--s1) 5%, var(--surface)); padding-top: 4px; padding-bottom: 4px; }
+#tab-status tr.detalhe td { font-size: 12px; color: var(--ink-2); background: var(--surface); padding-top: 4px; padding-bottom: 4px; }
 #tab-status tr.detalhe td:first-child { padding-left: 36px; }
 #tab-status .seta { display: inline-block; width: 14px; color: var(--ink-3); }
 #tab-status tr.detalhe.cab td { color: var(--ink-3); font-weight: 600; font-size: 11px; }
@@ -190,6 +194,71 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
    numero em negrito cheio e % em peso medio para nao ficar apagado */
 .mini-g text.rotulo-seg { font-size: 12px; font-weight: 700; }
 .mini-g text.rotulo-seg .rotulo-pct { font-size: 10.5px; font-weight: 600; }
+/* KPIs em linha acima do grafico, no estilo de cartao: icone, selo de variacao, numero grande, nome e detalhe */
+/* KPIs na vertical, a esquerda do grafico (o grafico cresce ate a altura da coluna de KPIs) */
+.card-grafico .linha-tabela { flex-direction: row; gap: 20px; align-items: flex-start; }
+.card-grafico .kpis-resp { width: 250px; flex: none; display: flex; flex-direction: column; gap: 10px; }
+.card-grafico .kpi-card { padding: 10px 14px; }
+.card-grafico .kpi-topo { margin-bottom: 4px; }
+.card-grafico .kpi-val { font-size: 24px; }
+/* ===== responsivo =====
+   ate 1100px: KPIs saem da lateral e viram uma linha acima do grafico (o grafico ganha a largura toda)
+   ate 760px: cabecalho empilhado, KPIs em 2 colunas, margens e textos menores; tabelas rolam na horizontal
+   ate 420px: KPIs em 1 coluna */
+@media (max-width: 1100px) {
+  .card-grafico .linha-tabela { flex-direction: column; align-items: stretch; }
+  .card-grafico .kpis-resp { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .wrap { padding: 14px 12px 32px; }
+  header { grid-template-columns: 1fr; justify-items: start; gap: 10px; }
+  h1 { font-size: 18px; }
+  .atualizacao { align-items: flex-start; padding: 6px 12px; }
+  .filtro-topo { justify-content: flex-start; }
+  #f-dia { min-width: 150px; }
+  .card { padding: 12px; }
+  .card-grafico .kpis-resp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cab-tabela .filtros { width: 100%; }
+  .filtros .seg { flex-wrap: wrap; }
+  .tabela-rolagem { -webkit-overflow-scrolling: touch; }
+  #tab-status td.etapa-desc div { width: 150px; }
+  #tab-status td.etapa-desc div.resumo-chegada > span { min-width: 0; }
+}
+@media (max-width: 420px) {
+  .card-grafico .kpis-resp { grid-template-columns: minmax(0, 1fr); }
+}
+/* titulo da coluna de KPIs na mesma altura do titulo do grafico */
+.card-grafico .kpis-resp .tit-kpis { margin: 0 0 2px; min-height: 0; padding-top: 0; }
+.kpi-card { background: var(--surface); border: 1px solid var(--grid); border-radius: 10px; padding: 14px 16px; }
+.kpi-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.kpi-icone { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: flex-start; }
+.kpi-icone svg { width: 17px; height: 17px; fill: none; stroke: var(--ink-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* selo no estilo da referencia: texto colorido com seta, sem fundo */
+.kpi-selo { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: 5px; }
+.kpi-selo .seta-tend { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.kpi-selo.sobe { color: #2f8a52; }
+.kpi-selo.desce { color: var(--critical); }
+.kpi-selo.sobe { color: #2f8a52; }
+.kpi-selo.desce { color: var(--critical); }
+.kpi-val { font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpi-nome { font-size: 13px; font-weight: 600; color: var(--ink-1); margin-top: 4px; }
+.kpi-det { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.kpi-meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+/* barrinha no prazo / fora / em aberto + numeros que completam a conta */
+.kpi-barra { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--grid); margin-top: 8px; }
+.kpi-barra i { display: block; height: 100%; }
+.kpi-barra .b-dentro { background: #6dbb84; }
+.kpi-barra .b-fora { background: var(--critical); }
+.kpi-barra .b-aberto { background: #c9c7bf; }
+/* "fora" e "em aberto" na mesma linha do numero grande, ao lado dele */
+.kpi-linha-val { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.kpi-lado { display: inline-flex; gap: 12px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.kpi-lado b { font-size: 15px; font-weight: 700; }
+.kpi-lado .q-fora { color: var(--critical); }
+.kpi-lado .q-aberto { color: var(--ink-2); }
+/* sempre os 5 lado a lado; em tela estreita so diminui o tamanho do texto */
+@media (max-width: 1100px) { .kpi-val { font-size: 22px; } .kpi-card { padding: 12px; } .kpi-selo { font-size: 13.5px; } }
 /* cartao do grafico: KPIs a esquerda, grafico ocupando o resto */
 .bloco-grafico { flex: 1; min-width: 0; }
 .card-grafico .kpis-resp .tit-tabela { min-height: 0; padding-top: 0; }
@@ -198,7 +267,7 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 .filtros .seg button { border-radius: 0; }
 /* historico: 2o nivel de detalhe (transportadoras dentro da data), mais recuado e mais claro */
 #tab-status tr.detalhe.expansivel td { color: var(--ink-1); }
-#tab-status tr.detalhe.n2 td { background: color-mix(in srgb, var(--s1) 2%, var(--surface)); }
+#tab-status tr.detalhe.n2 td { background: var(--surface); }
 #tab-status tr.detalhe.n2 td:first-child { padding-left: 64px; }
 /* o grafico fica sempre a direita da tabela; so empilha em tela de celular */
 @media (max-width: 1100px) { .tabelas { grid-template-columns: 1fr; } }
@@ -211,37 +280,10 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 .cab-grafico .legenda { margin-top: 0; }
 .mini-g text.rotulo-dia { fill: var(--ink-2); font-size: 12px; font-weight: 500; }
 .mini-g text.rotulo-dia.hoje { fill: var(--ink-1); font-weight: 700; }
-.mini-g text.rotulo-mes { fill: var(--ink-2); font-size: 12px; font-weight: 600; }
-/* matriz de carretas por hora de fim da consolidacao */
-#tab-consol th, #tab-consol td { padding: 4px 8px; }
-#tab-consol th { background: var(--surface); text-align: center; }
-#tab-consol th:first-child { text-align: left; }
-#tab-consol th.nome-proc { font-weight: 500; color: var(--ink-3); font-size: 11px; }
-#tab-consol th.fora { color: var(--ink-3); font-style: italic; }
-#tab-consol .desde { display: block; margin: 2px 0 0 18px; font-size: 11px; color: var(--ink-3); }
-/* 4 carretas ou mais no mesmo status e hora */
-#tab-consol td.alerta-qtd { color: var(--critical); font-weight: 700; background: color-mix(in srgb, var(--critical) 10%, var(--surface)); }
-#tab-consol td.tot { font-weight: 650; }
-#tab-consol td { text-align: center; }
-#tab-consol td:first-child { text-align: left; }
-#tab-consol tr.expansivel { cursor: pointer; }
-/* linha e coluna sob o mouse (destaque em cruz); o cruzamento fica um pouco mais escuro */
-#tab-consol tr:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }
-#tab-consol .col-hover { background: color-mix(in srgb, var(--ink-1) 5%, var(--surface)) !important; }
-#tab-consol tr:hover td.col-hover { background: color-mix(in srgb, var(--ink-1) 11%, var(--surface)) !important; }
-#tab-consol tr.expansivel:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }
-#tab-consol .seta { display: inline-block; width: 14px; color: var(--ink-3); }
-#tab-consol tr.detalhe td { font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--s1) 5%, var(--surface)); }
-#tab-consol tr.detalhe td:first-child { padding-left: 30px; }
-#tab-consol tr.detalhe td.tot { font-weight: 500; }
-#tab-consol td.vazio { color: var(--grid); }
-#tab-consol th.hoje { color: var(--ink-1); font-weight: 700; }
-#tab-consol tr.sem-fim td { color: var(--ink-2); font-style: italic; border-top: 1px solid var(--axis); }
-#tab-consol td.tot { font-weight: 650; }
-#tab-consol .col-barra { width: 180px; min-width: 120px; }
-#tab-consol .trilho-hora { height: 12px; }
-#tab-consol .barra-hora { height: 100%; border-radius: 0 3px 3px 0; background: color-mix(in srgb, var(--s1) 45%, var(--surface)); }
-#tab-consol .barra-hora.pico { background: var(--s1); }
+.mini-g text.rotulo-mes { fill: var(--ink-2); font-size: 12px; font-weight: 600; }/* matriz de carretas por hora de fim da consolidacao */
+#tab-consol th, #tab-consol td { padding: 4px 8px; }#tab-consol th { background: var(--surface); text-align: center; }#tab-consol th:first-child { text-align: left; }#tab-consol th.nome-proc { font-weight: 500; color: var(--ink-3); font-size: 11px; }#tab-consol th.fora { color: var(--ink-3); font-style: italic; }#tab-consol .desde { display: block; margin: 2px 0 0 18px; font-size: 11px; color: var(--ink-3); }/* 4 carretas ou mais no mesmo status e hora */
+#tab-consol td.alerta-qtd { color: var(--critical); font-weight: 700; background: color-mix(in srgb, var(--critical) 10%, var(--surface)); }#tab-consol td.tot { font-weight: 650; }#tab-consol td { text-align: center; }#tab-consol td:first-child { text-align: left; }#tab-consol tr.expansivel { cursor: pointer; }/* linha e coluna sob o mouse (destaque em cruz); o cruzamento fica um pouco mais escuro */
+#tab-consol tr:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }#tab-consol .col-hover { background: color-mix(in srgb, var(--ink-1) 5%, var(--surface)) !important; }#tab-consol tr:hover td.col-hover { background: color-mix(in srgb, var(--ink-1) 11%, var(--surface)) !important; }#tab-consol tr.expansivel:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }#tab-consol .seta { display: inline-block; width: 14px; color: var(--ink-3); }#tab-consol tr.detalhe td { font-size: 12px; color: var(--ink-2); background: var(--surface); }#tab-consol tr.detalhe td:first-child { padding-left: 30px; }#tab-consol tr.detalhe td.tot { font-weight: 500; }#tab-consol td.vazio { color: var(--grid); }#tab-consol th.hoje { color: var(--ink-1); font-weight: 700; }#tab-consol tr.sem-fim td { color: var(--ink-2); font-style: italic; border-top: 1px solid var(--axis); }#tab-consol td.tot { font-weight: 650; }#tab-consol .col-barra { width: 180px; min-width: 120px; }#tab-consol .trilho-hora { height: 12px; }#tab-consol .barra-hora { height: 100%; border-radius: 0 3px 3px 0; background: color-mix(in srgb, var(--s1) 45%, var(--surface)); }#tab-consol .barra-hora.pico { background: var(--s1); }
 /* historico: pedidos sem tempo na etapa (falta data / datas invalidas) */
 #tab-status td.gap { color: var(--critical); font-weight: 600; }
 /* barra do tempo medio da etapa (historico): embaixo do numero, alinhada a direita */
@@ -253,6 +295,8 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 /* AG. VEÍCULO: folga em verde, atraso em vermelho */
 #tab-status .barra-tempo i.folga { background: #6dbb84; }
 #tab-status .barra-tempo i.atraso { background: var(--critical); }
+/* nome da etapa AG. VEÍCULO numa linha so (sem quebrar dentro da coluna estreita do descritivo) */
+#tab-status .nome-linha { white-space: nowrap; }
 /* resumo da chegada do veiculo x janela (linha AG. VEÍCULO do historico) */
 #tab-status td.etapa-desc div.resumo-chegada { width: auto; display: flex; gap: 14px; flex-wrap: wrap; margin-top: 3px;
   font-size: 11.5px; color: var(--ink-2); white-space: nowrap; }
@@ -278,6 +322,9 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 #popup td.ruim { color: var(--critical); font-weight: 600; background: color-mix(in srgb, var(--critical) 8%, var(--surface)); }
 #popup td.motivo { text-align: left; color: var(--ink-2); }
 #popup td:nth-child(2), #popup th:nth-child(2) { text-align: left; }
+.mini-g text.rotulo-hoje { fill: var(--ink-2); font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+/* contorno branco nos textos acima das barras, para ficarem legiveis por cima da linha tracejada do "Hoje" */
+.mini-g text.alerta-barra, .mini-g text.rotulo-barra { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
 /* alerta acima do total: dia ate hoje com pedidos ainda nao expedidos */
 .mini-g text.alerta-barra { fill: var(--critical); font-size: 11px; font-weight: 700; }
 .leg-alerta { color: var(--critical); font-weight: 600; }
@@ -292,7 +339,12 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
     <h1>One page Drive Expedição</h1>
     <!-- data/hora em que o ETL rodou, centralizada no topo -->
     <div class="atualizacao"><span class="rot">Data última atualização</span><span id="gerado"></span></div>
-    <div></div>
+    <!-- filtro de dia no topo: vale para os KPIs, a tabela de status e a matriz de status atual -->
+    <div class="filtros filtro-topo">
+      <!-- metrica: troca a contagem do painel (KPIs, grafico, tabela e historicos) -->
+      <label>Métrica <span class="seg" id="f-metrica" role="group" aria-label="Métrica">
+        <button data-m="pedidos" class="ativo">Pedidos</button><button data-m="tus">TUs</button><button data-m="carretas">Carretas</button></span></label>
+      <label>Dia de expedição <select id="f-dia"><option value="">Todos</option></select></label></div>
   </header>
 
   <div class="visao secao">
@@ -303,7 +355,7 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
         <div class="bloco-grafico">
           <!-- titulo a esquerda, legenda a direita na mesma linha -->
           <div class="cab-grafico">
-            <h2 class="tit-tabela">Planejamento diário de pedidos</h2>
+            <h2 class="tit-tabela" id="tit-grafico">Planejamento diário de pedidos</h2>
             <div class="legenda" id="leg-pedidos"></div>
           </div>
           <div class="mini-g" id="g-pedidos" style="margin-top:8px"></div>
@@ -320,7 +372,6 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
         </div>
         <!-- filtro do dia e modo (tempo real / historico): valem so para esta tabela -->
         <div class="filtros" style="margin:0">
-          <label>Dia de expedição <select id="f-dia"><option value="">Todos</option></select></label>
           <div class="seg" id="f-modo" role="group" aria-label="Visão da tabela">
             <button data-m="real" class="ativo">Tempo real</button><button data-m="hist-dia">Histórico por data</button><button data-m="hist-tr">Histórico por transportadora</button>
           </div>
@@ -568,7 +619,7 @@ function desenharEmpilhado(el, ds, valores, opcoes) {
   // valores[i][g] = pedidos do dia i no grupo g
   // com alerta, abre espaco no topo para a linha de alerta acima do total
   // com meses, abre uma 2a linha no eixo x (mes de referencia abaixo das datas)
-  const W = Math.max(260, el.clientWidth), H = opcoes.H || 230, m = { t: opcoes.alerta ? 38 : 20, r: 4, b: opcoes.meses ? 40 : 20, l: 46 };
+  const W = Math.max(260, el.clientWidth), H = opcoes.H || 230, m = { t: opcoes.alerta ? (opcoes.marcarHoje ? 56 : 38) : 20, r: 4, b: opcoes.meses ? 40 : 20, l: 46 };
   const iw = W - m.l - m.r, ih = H - m.t - m.b;
   const totais = valores.map(v => v.reduce((s, x) => s + x, 0));
   const topo = tetoContagem(Math.max(1, ...totais));
@@ -580,6 +631,16 @@ function desenharEmpilhado(el, ds, valores, opcoes) {
     svg += `<text x="${m.l - 6}" y="${y(t) + 3}" text-anchor="end">${t ? fmtInt(t) : "0"}</text>`;
   });
   const cadaRotulo = Math.max(1, Math.ceil(ds.length / Math.floor(iw / 44)));
+  // marcador do dia atual: faixa leve + linha tracejada no centro (atras da barra) e o rotulo "Hoje" no topo
+  const iHoje = opcoes.marcarHoje ? ds.indexOf(hoje) : -1;
+  if (iHoje >= 0) {
+    const cxh = m.l + passo * iHoje + passo / 2;
+    // linha cinza curta: do "HOJE" ate logo acima dos textos da coluna (alerta/total), sem cruzar textos nem a barra
+    const temAlerta = opcoes.alerta && totais[iHoje] > 0 && opcoes.alerta(iHoje);
+    const yFim = totais[iHoje] > 0 ? y(totais[iHoje]) - (temAlerta ? 36 : 22) : m.t + ih;
+    if (yFim > m.t - 10) svg += `<line x1="${cxh}" x2="${cxh}" y1="${m.t - 12}" y2="${yFim}" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="4 4" pointer-events="none"/>`;
+    svg += `<text class="rotulo-hoje" x="${cxh}" y="${m.t - 18}" text-anchor="middle" pointer-events="none">HOJE</text>`;
+  }
   ds.forEach((d, i) => {
     const cx = m.l + passo * i + passo / 2, x0 = cx - bw / 2;
     svg += `<rect class="alvo" data-i="${i}" x="${m.l + passo * i}" y="${m.t}" width="${passo}" height="${ih}" fill="transparent"/>`;
@@ -607,7 +668,9 @@ function desenharEmpilhado(el, ds, valores, opcoes) {
     });
     if (totais[i] > 0 && passo >= 34) svg += `<text class="rotulo-barra" x="${cx}" y="${y(totais[i]) - 5}" text-anchor="middle" pointer-events="none">${fmtInt(totais[i])}</text>`;
     // alerta acima do total (ex: dia ainda nao 100% expedido)
-    const alerta = opcoes.alerta && totais[i] > 0 ? opcoes.alerta(i) : null;
+    let alerta = opcoes.alerta && totais[i] > 0 ? opcoes.alerta(i) : null;
+    // coluna estreita (tela pequena): alerta curto "⚠ 802" para nao encavalar no vizinho; muito estreita: some
+    if (alerta && passo < 80) alerta = passo < 34 ? null : alerta.replace(/ não exp\.$/, "");
     if (alerta) svg += `<text class="alerta-barra" x="${cx}" y="${y(totais[i]) - 21}" text-anchor="middle" pointer-events="none">${alerta}</text>`;
     // datas mais escuras que o eixo y; a data de hoje em negrito
     if (i % cadaRotulo === 0) svg += `<text class="rotulo-dia${d === hoje ? " hoje" : ""}" x="${cx}" y="${opcoes.meses ? H - 24 : H - 6}" text-anchor="middle">${fmtDia(d)}</text>`;
@@ -672,9 +735,32 @@ function renderTabelaTempos(rows) {
 }
 
 // ===== tabela de SLAs, contagem em pedidos (qtde_pedidos das TUs); % no prazo sobre o total (inclui em aberto) =====
+// ===== metrica do painel: pedidos, TUs ou carretas =====
+// carreta = chave (igual ao ATS): conta uma vez so, no status da TU menos avancada e no pior SLA entre as TUs
+let metrica = "pedidos";
+const ROT_METRICA = { pedidos: "pedidos", tus: "TUs", carretas: "carretas" };
+const rotMetrica = (maiuscula = false) => { const t = ROT_METRICA[metrica]; return maiuscula ? t[0].toUpperCase() + t.slice(1) : t; };
+const STATUS_CARRETA = {};
+D.linhas.forEach(r => {
+  const i = idxStatus(r[I.status]);
+  if (!(r[I.chave] in STATUS_CARRETA) || i < STATUS_CARRETA[r[I.chave]]) STATUS_CARRETA[r[I.chave]] = i;
+});
+// status usado para agrupar: o da TU, ou o da carreta quando a metrica e carretas
+const statusDe = r => metrica === "carretas" ? STATUS[STATUS_CARRETA[r[I.chave]]].nome : r[I.status];
+// quantidade de um grupo de linhas (TUs) na metrica escolhida
+const medir = rs => metrica === "tus" ? rs.length
+  : metrica === "carretas" ? new Set(rs.map(r => r[I.chave])).size
+  : rs.reduce((a, r) => a + (r[I.pedidos] || 0), 0);
 function slaPedidos(rows, i) {
   const c = [0, 0, 0];  // 0 = dentro, 1 = fora, 2 = em aberto
-  rows.forEach(r => c[r[I.sla + i]] += r[I.pedidos] || 0);
+  if (metrica === "carretas") {
+    // pior ocorrencia da carreta: fora > em aberto > dentro (mesma regra da aba resumo)
+    const PESO = [0, 2, 1], pior = {};
+    rows.forEach(r => { const v = r[I.sla + i], k = r[I.chave]; if (!(k in pior) || PESO[v] > PESO[pior[k]]) pior[k] = v; });
+    Object.values(pior).forEach(v => c[v]++);
+  } else {
+    rows.forEach(r => c[r[I.sla + i]] += metrica === "tus" ? 1 : (r[I.pedidos] || 0));
+  }
   return { dentro: c[0], fora: c[1], aberto: c[2], total: c[0] + c[1] + c[2] };
 }
 const SLAS_TABELA = [
@@ -717,7 +803,7 @@ const janelaDaTU = r => {
 };
 const TEMPO_EXTRA = {
   // meta: chegar 1h antes da janela -> (janela − 1h) − agora
-  "AG. VEÍCULO": { nome: "Chegada do veículo x meta (1h antes da janela)", desc: "",
+  "AG. VEÍCULO": { nome: `<span class="nome-linha">Chegada do veículo · meta 1h antes da janela</span>`, desc: "",
     calc: r => (janelaDaTU(r) - Date.now()) / 60000 - META_CHEGADA_MIN },
 };
 // etapas do historico, na ordem dos status. p = posicao em I.motivo (ETAPAS_MOTIVO no app.py);
@@ -737,7 +823,7 @@ const ETAPAS_HIST = [
   { s: "EM DOCA E FATURADA", p: 0, datas: [0, 1] },
   { s: "EM CONSOLIDAÇÃO", p: 1, datas: [1, 2] },
   // AG. VEÍCULO: chegada na doca x janela (tempo_chegada_doca_geral: negativo = chegou antes da janela)
-  { s: "AG. VEÍCULO", p: 6, datas: [4, 8], nome: "Chegada do veículo x meta (1h antes da janela)", desc: "",
+  { s: "AG. VEÍCULO", p: 6, datas: [4, 8], nome: `<span class="nome-linha">Chegada do veículo · meta 1h antes da janela</span>`, desc: "",
     val: T_GERAL_CHEGADA, semSoma: true, soCheckout: true,
     // resumo: TUs que chegaram antes da janela (folga media), depois (atraso medio) e mediana geral
     // comTexto = linha da etapa (com os rotulos); nas datas/transportadoras so os horarios, alinhados embaixo
@@ -766,13 +852,10 @@ const ETAPAS_HIST = [
 // status expandidos (mostrando transportadoras) sobrevivem a troca de filtro
 const statusAbertos = new Set();
 function renderTabelaStatus(rows) {
+  // agrupa pelo status (da TU, ou da carreta na metrica carretas) e mede cada grupo na metrica escolhida
   const ped = {}, porStatus = {}, porResp = { DHL: 0, TRANSPORTE: 0 };
-  rows.forEach(r => {
-    const s = STATUS[idxStatus(r[I.status])].nome, n = r[I.pedidos] || 0;
-    ped[s] = (ped[s] || 0) + n;
-    porResp[STATUS[idxStatus(s)].resp] += n;
-    (porStatus[s] = porStatus[s] || []).push(r);
-  });
+  rows.forEach(r => { const s = STATUS[idxStatus(statusDe(r))].nome; (porStatus[s] = porStatus[s] || []).push(r); });
+  Object.keys(porStatus).forEach(s => { ped[s] = medir(porStatus[s]); porResp[STATUS[idxStatus(s)].resp] += ped[s]; });
   const total = porResp.DHL + porResp.TRANSPORTE;
   const pct = n => fmtPct(total ? n / total : null);
   // EXPEDIDO aparece sempre (mesmo com 0) por ser o status final
@@ -820,7 +903,7 @@ function renderTabelaStatus(rows) {
     const porTr = {};
     (porStatus[s] || []).forEach(r => (porTr[r[I.tr]] = porTr[r[I.tr]] || []).push(r));
     const lista = Object.entries(porTr)
-      .map(([tr, rs]) => ({ tr, rs, n: rs.reduce((a, r) => a + (r[I.pedidos] || 0), 0) }))
+      .map(([tr, rs]) => ({ tr, rs, n: medir(rs) }))
       .sort((a, b) => b.n - a.n);
     // nas transportadoras a escala e o maior tempo entre elas (a mais demorada fica cheia)
     const escalaTr = TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s] ? Math.max(0, ...lista.map(o => Math.abs(mediaDe(s, o.rs) || 0))) : 0;
@@ -836,8 +919,8 @@ function renderTabelaStatus(rows) {
     `<tr><th rowspan="2">Status TU</th><th class="grp" colspan="2">Tempo médio da etapa</th>` +
     `${RESPONSAVEIS.map(r => `<th class="grp h-${r}" colspan="2">${r}</th>`).join("")}<th class="grp" colspan="2">Total</th></tr>` +
     `<tr class="sub"><th class="ini">Tempo</th><th style="text-align:left">Etapa (cálculo)</th>` +
-    `${RESPONSAVEIS.map(r => `<th class="ini h-${r}">Qtd. pedidos</th><th class="h-${r}">%</th>`).join("")}` +
-    `<th class="ini">Qtd. pedidos</th><th>%</th></tr>` +
+    `${RESPONSAVEIS.map(r => `<th class="ini h-${r}">Qtd. ${rotMetrica()}</th><th class="h-${r}">%</th>`).join("")}` +
+    `<th class="ini">Qtd. ${rotMetrica()}</th><th>%</th></tr>` +
     lista.map(s => {
       const resp = STATUS[idxStatus(s)].resp;
       const cls = s === "EXPEDIDO" ? "c-exp" : resp === "DHL" ? "c-dhl" : "c-transp";
@@ -867,23 +950,61 @@ function renderTabelaStatus(rows) {
 // KPIs a esquerda do grafico (seguem o filtro de dia): so o de ATS;
 // a divisao DHL x TRANSPORTE fica na legenda do grafico e na linha Total da tabela
 function renderKpis(rows) {
-  $("kpis-resp").innerHTML = `<h2 class="tit-tabela">KPIs</h2>` + KPIS_SLA.map(k => kpiSla(rows, k)).join("");
+  $("kpis-resp").innerHTML = kpiTotal(rows) + KPIS_SLA.map(k => kpiSla(rows, k)).join("");
+}
+// KPI em aberto: ainda nao expedido (sem checkout = sla_expedicao em aberto); fecha com o Total
+// (Total = expedidos + em aberto). Selo = % do total
+function kpiAberto(rows) {
+  const st = slaPedidos(rows, 2);  // 2 = sla_expedicao
+  return `<div class="kpi-card" title="ainda sem checkout · ${fmtInt(st.total - st.aberto)} já expedidos">
+      <div class="kpi-topo"><span class="kpi-icone">${ICONE.aberto}</span><span class="kpi-selo">${fmtPct(st.total ? st.aberto / st.total : null)}</span></div>
+      <div class="kpi-val">${fmtInt(st.aberto)}</div>
+      <div class="kpi-nome">Em aberto (não expedido)</div></div>`;
+}
+// KPI de total do recorte: pedidos (numero grande), carretas (selo) e TUs
+function kpiTotal(rows) {
+  const ped = medir(rows);
+  const carretas = new Set(rows.map(r => r[I.chave])).size;
+  return `<div class="kpi-card" title="total de pedidos do dia filtrado">
+      <div class="kpi-topo"><span class="kpi-icone">${ICONE.total}</span></div>
+      <div class="kpi-val">${fmtInt(ped)}</div>
+      <div class="kpi-nome">Total de ${rotMetrica()}</div></div>`;
 }
 
+// icones (traco simples, 18px) de cada KPI
+const ICONE = {
+  aberto: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+  total: `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>`,
+  // ATS = puxada da carga ate a doca: setas levando a uma linha (a doca)
+  ats: `<svg viewBox="0 0 24 24"><path d="M20 4v16"/><path d="M3 8h11M10 4.5l4 3.5-4 3.5"/><path d="M3 16h11M10 12.5l4 3.5-4 3.5"/></svg>`,
+  // chegada dos veiculos = caminhao
+  veiculo: `<svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>`,
+  carreg: `<svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>`,
+  // expedicao = saida (porta com seta para fora)
+  exped: `<svg viewBox="0 0 24 24"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5"/><path d="M14 8l4 4-4 4M18 12H9"/></svg>`,
+};
 // KPIs de SLA na ordem do processo; i = posicao do SLA na linha do painel (ver SLAS no app.py)
 const KPIS_SLA = [
-  { i: 0, nome: "ATS NO PRAZO", desc: "puxada até a janela − 3h" },
-  { i: 3, nome: "VEÍCULOS NO PRAZO", desc: "chegada na doca até a janela" },
-  { i: 1, nome: "CARREGAMENTO NO PRAZO", desc: "fim do carregamento até a janela" },
-  { i: 2, nome: "EXPEDIÇÃO NO PRAZO", desc: "checkout até a janela" },
+  { i: 0, nome: "ATS no prazo", desc: "puxada até a janela − 3h · meta 95%", ic: "ats", meta: 0.95 },
+  { i: 3, nome: "Chegada veículos no prazo", desc: "chegada na doca até a janela · meta 70%", ic: "veiculo", meta: 0.70 },
+  { i: 1, nome: "Carregamento no prazo", desc: "fim do carregamento até a janela", ic: "carreg" },
+  { i: 2, nome: "Expedição no prazo", desc: "checkout até a janela", ic: "exped" },
 ];
-// mesma conta da aba resumo (ex: ats_pedidos_pct): no prazo / total de pedidos, contando os em aberto no total
+// mesma conta da aba resumo (ex: ats_pedidos_pct): no prazo / total de pedidos, contando os em aberto no total.
+// numero grande = pedidos no prazo; selo = % no prazo, verde com ↗ a partir da meta e vermelho com ↘ abaixo dela.
+// meta de cada KPI em KPIS_SLA (ATS 95%, veiculos 70%); sem meta propria vale META_SLA
+const META_SLA = 0.9;
+// setas de tendencia em zigue-zague (como na referencia)
+const SETA_SOBE = `<svg class="seta-tend" viewBox="0 0 24 24"><polyline points="2 17 8.5 10.5 13.5 15.5 22 7"/><polyline points="16 7 22 7 22 13"/></svg>`;
+const SETA_DESCE = `<svg class="seta-tend" viewBox="0 0 24 24"><polyline points="2 7 8.5 13.5 13.5 8.5 22 17"/><polyline points="16 17 22 17 22 11"/></svg>`;
 function kpiSla(rows, k) {
   const st = slaPedidos(rows, k.i);
-  return `<div class="kpi-resp ats" title="${k.desc}">
-      <div class="rot">${k.nome}</div>
-      <div class="val">${fmtPct(st.total ? st.dentro / st.total : null)}</div>
-      <div class="det">${fmtInt(st.dentro)} de ${fmtInt(st.total)} pedidos · ${fmtInt(st.fora)} fora · ${fmtInt(st.aberto)} em aberto</div></div>`;
+  const pct = st.total ? st.dentro / st.total : null;
+  return `<div class="kpi-card" title="${k.desc}">
+      <div class="kpi-topo"><span class="kpi-icone">${ICONE[k.ic]}</span>${pct == null ? "" :
+        `<span class="kpi-selo ${pct >= (k.meta || META_SLA) ? "sobe" : "desce"}" title="meta ${fmtPct(k.meta || META_SLA)}">${pct >= (k.meta || META_SLA) ? SETA_SOBE : SETA_DESCE}${fmtPct(pct)}</span>`}</div>
+      <div class="kpi-val">${fmtInt(st.dentro)}</div>
+      <div class="kpi-nome">${k.nome}</div></div>`;
 }
 
 // historico = D-1: so dias de expedicao ate ontem (hoje e os proximos dias ainda estao em andamento)
@@ -904,7 +1025,7 @@ function renderTabelaHistorico(rows) {
   const etapas = ETAPAS_HIST;
   // resumo de um grupo de TUs na etapa e: tempo medio e pedidos com tempo, e os pedidos sem tempo
   // separados pelo motivo (falta data / datas fora de ordem ou apos o checkout)
-  const somaPed = rs => rs.reduce((a, r) => a + (r[I.pedidos] || 0), 0);
+  const somaPed = medir;  // na metrica escolhida (pedidos, TUs ou carretas)
   const resumo = (rs, e) => {
     const com = rs.filter(r => e.val(r) != null);
     const motivo = c => rs.filter(r => e.val(r) == null && String(r[I.motivo] || "")[e.p] === c);
@@ -982,7 +1103,7 @@ function renderTabelaHistorico(rows) {
   const celTotGap = n => `<td class="gap" title="soma das etapas: o mesmo pedido pode contar em mais de uma">${n ? fmtInt(n) : "—"}</td>`;
   const totPed = somaPed(rows);
   $("tab-status").innerHTML =
-    `<tr><th rowspan="2">Status TU</th><th class="grp" colspan="2">Tempo médio da etapa</th><th class="grp" colspan="3">Pedidos</th></tr>` +
+    `<tr><th rowspan="2">Status TU</th><th class="grp" colspan="2">Tempo médio da etapa</th><th class="grp" colspan="3">${rotMetrica(true)}</th></tr>` +
     `<tr class="sub"><th class="ini">Tempo</th><th style="text-align:left">Etapa (cálculo)</th>` +
     `<th class="ini">Com tempo</th><th title="uma das datas da etapa não foi apontada">Falta data</th>` +
     `<th title="datas fora de ordem ou depois do checkout: tempo descartado">Datas inválidas</th></tr>` + corpo +
@@ -1138,10 +1259,11 @@ function renderPedidos(rows) {
   const ds = Object.keys(por).sort();
   // o grafico nao abre por status TU: so 3 grupos (base -> topo) DHL, TRANSPORTE em andamento e EXPEDIDO
   const valores = ds.map(d => {
-    const v = GRUPOS_GRAFICO.map(() => 0);
-    por[d].forEach(r => v[grupoGrafico(r[I.status])] += r[I.pedidos] || 0);
-    return v;
+    const v = GRUPOS_GRAFICO.map(() => []);
+    por[d].forEach(r => v[grupoGrafico(statusDe(r))].push(r));
+    return v.map(medir);
   });
+  $("tit-grafico").textContent = `Planejamento diário de ${rotMetrica()}`;
   $("leg-pedidos").innerHTML = GRUPOS_GRAFICO
     .map(g => `<span><i class="dot" style="background:${g.cor}"></i>${g.nome}</span>`).join("");
   // altura do grafico = altura do cartao da tabela menos titulo/legenda do cartao do grafico,
@@ -1154,14 +1276,14 @@ function renderPedidos(rows) {
   const H = ladoALado ? Math.max(240, cardTab.offsetHeight - extra) : Math.max(360, $("kpis-resp").offsetHeight - cabG);
   desenharEmpilhado($("g-pedidos"), ds, valores, {
     // numero e % do dia dentro de cada parte da barra (DHL, TRANSPORTE e EXPEDIDO), quando cabe
-    H, series: GRUPOS_GRAFICO, pct: true, meses: true,
+    H, series: GRUPOS_GRAFICO, pct: true, meses: true, marcarHoje: true,
     // alerta nos dias ate hoje que ainda nao estao 100% expedidos (dias futuros ainda estao no planejamento)
     alerta: i => {
       const falta = valores[i][0] + valores[i][1];
       return ds[i] <= hoje && falta > 0 ? `⚠ ${fmtInt(falta)} não exp.` : null;
     },
     // tooltip do topo para a base, na mesma ordem visual da barra
-    tt: i => `<b>${fmtDia(ds[i])}</b> · ${fmtInt(valores[i].reduce((s, x) => s + x, 0))} pedidos<br>` +
+    tt: i => `<b>${fmtDia(ds[i])}</b> · ${fmtInt(valores[i].reduce((s, x) => s + x, 0))} ${rotMetrica()}<br>` +
       GRUPOS_GRAFICO.map((g, j) => valores[i][j] > 0 ? `<i class="dot" style="background:${g.cor}"></i> ${g.nome}: ${fmtInt(valores[i][j])}` +
         ` (${fmtPct(valores[i][j] / valores[i].reduce((s, x) => s + x, 0))})` : "")
         .filter(Boolean).reverse().join("<br>"),
@@ -1246,11 +1368,12 @@ function render() {
     $("sub-status").textContent = "";
     renderTabelaHistorico(filtrarHistorico(rows));
   } else {
-    $("tit-status").textContent = "Pedidos por status TU e responsável";
+    $("tit-status").textContent = `${rotMetrica(true)} por status TU e responsável`;
     $("sub-status").textContent = "Tempo médio da etapa: só nos status de transporte";
     renderTabelaStatus(rows);
   }
   $("f-modo").querySelectorAll("button").forEach(b => b.classList.toggle("ativo", b.dataset.m === modo));
+  $("f-metrica").querySelectorAll("button").forEach(b => b.classList.toggle("ativo", b.dataset.m === metrica));
   renderPedidos(D.linhas);
   // matriz do dia escolhido no filtro (sem filtro: hoje)
   renderMatrizConsolidacao(D.linhas);
@@ -1264,7 +1387,7 @@ const CHAVE_ESTADO = "painel-drive-estado";
 function salvarEstado() {
   try {
     localStorage.setItem(CHAVE_ESTADO, JSON.stringify({
-      t: Date.now(), modo, dia: selDia.value, status: [...statusAbertos], hist: [...histAbertos], consol: [...consolAbertas],
+      t: Date.now(), modo, metrica, dia: selDia.value, status: [...statusAbertos], hist: [...histAbertos], consol: [...consolAbertas],
     }));
   } catch (e) { /* navegador sem armazenamento: segue sem lembrar */ }
 }
@@ -1272,6 +1395,7 @@ try {
   const e = JSON.parse(localStorage.getItem(CHAVE_ESTADO) || "null");
   if (e && Date.now() - e.t < 30 * 60 * 1000) {
     modo = ["real", "hist-dia", "hist-tr"].includes(e.modo) ? e.modo : "real";
+    metrica = ["pedidos", "tus", "carretas"].includes(e.metrica) ? e.metrica : "pedidos";
     if ([...selDia.options].some(o => o.value === e.dia) && !(ehHist() && e.dia >= hoje)) selDia.value = e.dia;
     else if (ehHist()) selDia.value = "";
     (e.status || []).forEach(s => statusAbertos.add(s));
@@ -1281,6 +1405,7 @@ try {
 } catch (e) { /* estado invalido ou indisponivel: comeca do padrao */ }
 
 selDia.onchange = () => { salvarEstado(); render(); };
+$("f-metrica").querySelectorAll("button").forEach(b => b.onclick = () => { metrica = b.dataset.m; salvarEstado(); render(); });
 // ao entrar no historico vindo do tempo real: todos os dias (para comparar); entre os dois historicos o dia
 // escolhido e mantido; ao voltar para o tempo real: dia atual
 $("f-modo").querySelectorAll("button").forEach(b => b.onclick = () => {
