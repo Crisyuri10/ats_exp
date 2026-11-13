@@ -28,16 +28,18 @@ TEMPOS = [
 ]
 COD_SLA = {"dentro_do_prazo": 0, "fora_do_prazo": 1, "em_aberto": 2}
 # datas que, quando passam do checkout, indicam célula arrastada no Sheets (bit de cada uma no campo de flags)
-ARRASTO = {"data_carregamento": 1, "data_consolidacao": 2, "data_chegada_doca": 4, "data_inicio_carregamento": 8}
+ARRASTO = {"data_carregamento": 1, "data_fim_consolidacao": 2, "data_chegada_doca": 4, "data_inicio_carregamento": 8}
 # etapas de transporte do histórico (mesma ordem do painel) e as duas datas de cada uma;
 # serve para explicar por que a etapa ficou sem tempo
 ETAPAS_MOTIVO = [
     ("tempo_puxada", "data_fim_faturamento", "data_ats"),
-    ("tempo_espera_consolidacao", "data_ats", "data_espera_consolidacao"),
-    ("tempo_consolidacao", "data_espera_consolidacao", "data_consolidacao"),
+    ("tempo_espera_consolidacao", "data_ats", "data_ent_nf"),
+    ("tempo_consolidacao", "data_ent_nf", "data_fim_consolidacao"),
     ("tempo_espera_carregamento", "data_chegada_doca", "data_inicio_carregamento"),
     ("tempo_carregamento", "data_inicio_carregamento", "data_carregamento"),
     ("tempo_saida_veiculo", "data_carregamento", "data_checkout"),
+    # AG. VEÍCULO no histórico: chegada na doca x janela de expedição
+    ("tempo_chegada_doca_geral", "data_chegada_doca", "data_exp"),
 ]
 
 
@@ -63,8 +65,8 @@ def pedidos(v):
 # datas das etapas de transporte enviadas ao painel para o popup de divergências
 # (ordem usada no painel_template.html, em DATAS_POPUP)
 DATAS_POPUP = [
-    "data_fim_faturamento", "data_ats", "data_espera_consolidacao", "data_consolidacao",
-    "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout",
+    "data_fim_faturamento", "data_ats", "data_ent_nf", "data_fim_consolidacao",
+    "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout", "data_exp",
 ]
 
 
@@ -101,7 +103,8 @@ def montar_dados(df, agora):
     linhas = []
     for i, r in df.iterrows():
         linhas.append(
-            [r["data_exp"].strftime("%Y-%m-%d"), str(r["transportador"]), str(r["status_tu"])]
+            # status2 = status_tu, com AG. CARREGAMENTO sem chegada na doca virando AG. VEÍCULO
+            [r["data_exp"].strftime("%Y-%m-%d"), str(r["transportador"]), str(r["status2"])]
             + [COD_SLA.get(r[s], 2) for s in SLAS]
             + [minutos(r[c]) for c in TEMPOS]
             + [int(flags[i]), str(r["chave"]), pedidos(r["qtde_pedidos"]), motivos(r),

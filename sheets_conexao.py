@@ -54,7 +54,7 @@ def tratar(bruto):
     # ===== 2. Remocao de linhas vazias =====
     # a aba usa formulas que deixam linhas vazias entre os blocos de dados.
     # data_exp serve de referencia: se estiver vazio, a linha inteira esta vazia
-    df = df.rename(columns={"JANELA DE EXPEDIÇÃO": "data_exp", "STATUS TU": "status_tu", "CONF. PUXADA": "data_ats", "QTDE DE PEDIDOS": "qtde_pedidos", "TRANSP. + TP": "transportador", "TU(s)": "TU", "HORÁRIO": "horario", "CHECKOUT": "data_checkout", "FIM DE CARREGAM.": "data_carregamento", "FIM. FATURAMENTO": "data_fim_faturamento", "FIM DE CONSOLIDAÇÃO": "data_consolidacao", "CRIAÇÃO PAC.": "data_criacao_pacote", "DATA E HORA DE CRIAÇÃO": "data_criacao_tu", "INICIO COLET.": "data_inicio_coleta", "FIM COLET.": "data_fim_coleta", "FIM DE CONF.": "data_fim_conferencia", "ENT. PROT. NF": "data_espera_consolidacao", "CHEGADA DOCA": "data_chegada_doca", "CHECK-IN": "data_checkin", "INICIO DE CARREG.": "data_inicio_carregamento"})
+    df = df.rename(columns={"JANELA DE EXPEDIÇÃO": "data_exp", "STATUS TU": "status_tu", "CONF. PUXADA": "data_ats", "QTDE DE PEDIDOS": "qtde_pedidos", "TRANSP. + TP": "transportador", "TU(s)": "TU", "HORÁRIO": "horario", "CHECKOUT": "data_checkout", "FIM DE CARREGAM.": "data_carregamento", "FIM. FATURAMENTO": "data_fim_faturamento", "FIM DE CONSOLIDAÇÃO": "data_fim_consolidacao", "CRIAÇÃO PAC.": "data_criacao_pacote", "DATA E HORA DE CRIAÇÃO": "data_criacao_tu", "INICIO COLET.": "data_inicio_coleta", "FIM COLET.": "data_fim_coleta", "FIM DE CONF.": "data_fim_conferencia", "ENT. PROT. NF": "data_ent_nf", "CHEGADA DOCA": "data_chegada_doca", "CHECK-IN": "data_checkin", "INICIO DE CARREG.": "data_inicio_carregamento"})
     df = df[df["data_exp"] != ""].reset_index(drop=True)
     print(f"Linhas apos remover vazias: {len(df)}")
 
@@ -67,18 +67,18 @@ def tratar(bruto):
     df["data_checkout"] = converter_data(df["data_checkout"])
     df["data_carregamento"] = converter_data(df["data_carregamento"])
     df["data_fim_faturamento"] = converter_data(df["data_fim_faturamento"])
-    df["data_consolidacao"] = converter_data(df["data_consolidacao"])
+    df["data_fim_consolidacao"] = converter_data(df["data_fim_consolidacao"])
     df["data_criacao_pacote"] = converter_data(df["data_criacao_pacote"])
     df["data_criacao_tu"] = converter_data(df["data_criacao_tu"])
     df["data_inicio_coleta"] = converter_data(df["data_inicio_coleta"])
     df["data_fim_coleta"] = converter_data(df["data_fim_coleta"])
     df["data_fim_conferencia"] = converter_data(df["data_fim_conferencia"])
-    df["data_espera_consolidacao"] = converter_data(df["data_espera_consolidacao"])
+    df["data_ent_nf"] = converter_data(df["data_ent_nf"])
     df["data_chegada_doca"] = converter_data(df["data_chegada_doca"])
     df["data_checkin"] = converter_data(df["data_checkin"])
     df["data_inicio_carregamento"] = converter_data(df["data_inicio_carregamento"])
     # o serial do Sheets e um float e perde precisao (ex: 05:25:00 vira 05:24:59.999), entao arredonda para o segundo
-    for col in ["data_exp", "data_limite_ats", "data_ats", "data_checkout", "data_carregamento", "data_fim_faturamento", "data_consolidacao", "data_criacao_pacote", "data_criacao_tu", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_espera_consolidacao", "data_chegada_doca", "data_checkin", "data_inicio_carregamento"]:
+    for col in ["data_exp", "data_limite_ats", "data_ats", "data_checkout", "data_carregamento", "data_fim_faturamento", "data_fim_consolidacao", "data_criacao_pacote", "data_criacao_tu", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_ent_nf", "data_chegada_doca", "data_checkin", "data_inicio_carregamento"]:
         df[col] = df[col].dt.round("s")
 
     # ===== 3b. Criacao da coluna chave (transportador + horario + data_exp) =====
@@ -143,17 +143,17 @@ def tratar(bruto):
     # vazio quando falta data_ats
     df["tempo_ats"] = df["data_limite_ats"] - df["data_ats"]
 
-    # ===== 3f3. Criacao da coluna tempo_espera_consolidacao (data_ats ate data_espera_consolidacao) =====
+    # ===== 3f3. Criacao da coluna tempo_espera_consolidacao (data_ats ate data_ent_nf) =====
     # vazio quando falta alguma data ou quando a entrada do protocolo da NF e anterior a puxada (erro de apontamento)
-    df["tempo_espera_consolidacao"] = df["data_espera_consolidacao"] - df["data_ats"]
+    df["tempo_espera_consolidacao"] = df["data_ent_nf"] - df["data_ats"]
     df.loc[df["tempo_espera_consolidacao"] < pd.Timedelta(0), "tempo_espera_consolidacao"] = pd.NaT
 
-    # ===== 3f4. Criacao da coluna tempo_consolidacao (data_espera_consolidacao ate data_consolidacao) =====
+    # ===== 3f4. Criacao da coluna tempo_consolidacao (data_ent_nf ate data_fim_consolidacao) =====
     # vazio quando falta alguma data ou quando o fim da consolidacao e anterior a entrada do protocolo da NF (erro de apontamento)
-    df["tempo_consolidacao"] = df["data_consolidacao"] - df["data_espera_consolidacao"]
+    df["tempo_consolidacao"] = df["data_fim_consolidacao"] - df["data_ent_nf"]
     df.loc[df["tempo_consolidacao"] < pd.Timedelta(0), "tempo_consolidacao"] = pd.NaT
-    # data_consolidacao depois do checkout e erro de apontamento (ex: celula arrastada no Sheets avancando o dia)
-    df.loc[df["data_consolidacao"] > df["data_checkout"], "tempo_consolidacao"] = pd.NaT
+    # data_fim_consolidacao depois do checkout e erro de apontamento (ex: celula arrastada no Sheets avancando o dia)
+    df.loc[df["data_fim_consolidacao"] > df["data_checkout"], "tempo_consolidacao"] = pd.NaT
 
     # ===== 3f4b. Criacao da coluna tempo_checkin_ate_doca (data_checkin ate data_chegada_doca) =====
     # vazio quando falta alguma data ou quando a chegada na doca e anterior ao check-in (erro de apontamento)
@@ -162,17 +162,17 @@ def tratar(bruto):
     # data_chegada_doca depois do checkout e erro de apontamento (ex: celula arrastada no Sheets avancando o dia)
     df.loc[df["data_chegada_doca"] > df["data_checkout"], "tempo_checkin_ate_doca"] = pd.NaT
 
-    # ===== 3f5. Criacao da coluna tempo_chegada_doca (data_consolidacao ate data_chegada_doca) =====
-    # o veiculo pode chegar antes ou depois do fim da consolidacao; nos dois casos o tempo e a diferenca positiva.
-    # vazio quando falta alguma data ou quando data_consolidacao/data_chegada_doca e depois do checkout (erro de apontamento)
-    df["tempo_chegada_doca"] = (df["data_chegada_doca"] - df["data_consolidacao"]).abs()
-    df.loc[df["data_consolidacao"] > df["data_checkout"], "tempo_chegada_doca"] = pd.NaT
+    # ===== 3f5. Criacao da coluna tempo_chegada_doca (chegada do veiculo na doca x janela de expedicao) =====
+    # mede a pontualidade do veiculo em relacao a janela (data_exp): ele pode chegar antes ou depois dela;
+    # nos dois casos o tempo e a diferenca positiva.
+    # vazio quando falta a chegada na doca ou quando ela e depois do checkout (erro de apontamento)
+    df["tempo_chegada_doca"] = (df["data_chegada_doca"] - df["data_exp"]).abs()
     df.loc[df["data_chegada_doca"] > df["data_checkout"], "tempo_chegada_doca"] = pd.NaT
     # separa o tempo em duas colunas para permitir media por caso:
-    # antes = veiculo chegou e aguardou a consolidacao terminar; depois = consolidacao terminou e aguardou o veiculo
-    chegou_antes = df["data_chegada_doca"] < df["data_consolidacao"]
-    # geral = conta direta com sinal: negativo quando o veiculo chegou antes do fim da consolidacao
-    df["tempo_chegada_doca_geral"] = (df["data_chegada_doca"] - df["data_consolidacao"]).where(df["tempo_chegada_doca"].notna())
+    # antes = veiculo chegou antes da janela (folga); depois = veiculo chegou depois da janela (atraso)
+    chegou_antes = df["data_chegada_doca"] < df["data_exp"]
+    # geral = conta direta com sinal: negativo quando o veiculo chegou antes da janela, positivo quando chegou atrasado
+    df["tempo_chegada_doca_geral"] = (df["data_chegada_doca"] - df["data_exp"]).where(df["tempo_chegada_doca"].notna())
     df["tempo_chegada_doca_antes"] = df["tempo_chegada_doca"].where(chegou_antes)
     df["tempo_chegada_doca_depois"] = df["tempo_chegada_doca"].where(~chegou_antes)
 
@@ -203,13 +203,20 @@ def tratar(bruto):
     df = df[~df["transportador"].str.contains("LALAMOVE", case=False, na=False)].reset_index(drop=True)
     df = df[df["qtde_pedidos"].astype(str).str.strip() != ""].reset_index(drop=True)
     print(f"Linhas apos filtros de status_tu, transportador e qtde_pedidos: {len(df)}")
+
+    # ===== 4b. Criacao da coluna status2 =====
+    # igual ao status_tu, exceto quando a carga ja esta pronta (AG. CARREGAMENTO) e o veiculo ainda
+    # nao chegou na doca (CHEGADA DOCA vazia): nesse caso vira AG. VEÍCULO
+    status_tu = df["status_tu"].astype(str).str.strip()
+    df["status2"] = df["status_tu"]
+    df.loc[(status_tu == "AG. CARREGAMENTO") & df["data_chegada_doca"].isna(), "status2"] = "AG. VEÍCULO"
     return df
 
 
 def gravar_etl(sh, df, agora):
     # ===== 5. Envio para a aba "etl" =====
-    df_envio = df[["data_exp", "data_limite_ats", "data_criacao_tu", "data_criacao_pacote", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_fim_faturamento", "data_ats", "data_espera_consolidacao", "data_consolidacao", "data_checkin", "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout","tempo_criacao_pacote","tempo_espera_picking","tempo_coleta","tempo_conferencia","tempo_faturamento","tempo_puxada","tempo_ats","tempo_espera_consolidacao","tempo_consolidacao","tempo_checkin_ate_doca","tempo_chegada_doca_antes","tempo_chegada_doca_depois","tempo_chegada_doca_geral","tempo_espera_carregamento","tempo_carregamento","tempo_saida_veiculo","sla_faturamento","sla_ats","sla_carregamento","sla_expedicao","sla_veiculos","status_tu", "qtde_pedidos", "transportador", "TU", "horario", "chave",]].copy()
-    for col in ["data_exp", "data_limite_ats", "data_criacao_tu", "data_criacao_pacote", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_fim_faturamento", "data_ats", "data_espera_consolidacao", "data_consolidacao", "data_checkin", "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout"]:
+    df_envio = df[["data_exp", "data_limite_ats", "data_criacao_tu", "data_criacao_pacote", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_fim_faturamento", "data_ats", "data_ent_nf", "data_fim_consolidacao", "data_checkin", "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout","tempo_criacao_pacote","tempo_espera_picking","tempo_coleta","tempo_conferencia","tempo_faturamento","tempo_puxada","tempo_ats","tempo_espera_consolidacao","tempo_consolidacao","tempo_checkin_ate_doca","tempo_chegada_doca_antes","tempo_chegada_doca_depois","tempo_chegada_doca_geral","tempo_espera_carregamento","tempo_carregamento","tempo_saida_veiculo","sla_faturamento","sla_ats","sla_carregamento","sla_expedicao","sla_veiculos","status_tu", "status2", "qtde_pedidos", "transportador", "TU", "horario", "chave",]].copy()
+    for col in ["data_exp", "data_limite_ats", "data_criacao_tu", "data_criacao_pacote", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_fim_faturamento", "data_ats", "data_ent_nf", "data_fim_consolidacao", "data_checkin", "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout"]:
         df_envio[col] = df_envio[col].dt.strftime("%d/%m/%Y %H:%M:%S").fillna("")
     for col in ["tempo_criacao_pacote", "tempo_espera_picking", "tempo_coleta", "tempo_conferencia", "tempo_faturamento", "tempo_puxada", "tempo_ats", "tempo_espera_consolidacao", "tempo_consolidacao", "tempo_checkin_ate_doca", "tempo_chegada_doca_antes", "tempo_chegada_doca_depois", "tempo_chegada_doca_geral", "tempo_espera_carregamento", "tempo_carregamento", "tempo_saida_veiculo"]:
         df_envio[col] = df_envio[col].apply(formatar_duracao)

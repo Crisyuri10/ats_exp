@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One page Drive Expedição</title>
+<!-- fonte Inter: numeros de largura igual (alinham nas colunas) e boa leitura em tamanho pequeno -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: light;
@@ -43,7 +47,9 @@
   --bar: #3987e5; --bar-2: #1c5cab; --critical: #e66767; --tt-bg: #f0efec; --tt-ink: #0b0b0b;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--page); color: var(--ink-1); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { margin: 0; background: var(--page); color: var(--ink-1); font: 14px/1.45 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "tnum" 1, "cv11" 1; -webkit-font-smoothing: antialiased; }
+select, button, input { font-family: inherit; }
 .wrap { padding: 24px 24px 48px; }
 /* topo em 3 colunas: titulo | data da ultima atualizacao (centro) | espaco */
 header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
@@ -83,6 +89,7 @@ button { cursor: pointer; }
 .legenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
 .legenda span { display: inline-flex; align-items: center; gap: 6px; }
 /* nome do status na tabela como etiqueta com fundo na cor do status */
+/* etiqueta do status pintada pela cor do processo (DHL / TRANSPORTE / EXPEDIDO), as mesmas do grafico */
 .chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
 .leg-p90 { width: 2px; height: 12px; background: var(--ink-3); display: inline-block; }
 .grafico { width: 100%; margin-top: 8px; }
@@ -169,7 +176,7 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 #tab-status td.tot { font-weight: 650; }
 #tab-status td.tempo { font-weight: 600; }
 #tab-status td.etapa-desc { text-align: left; font-size: 12px; line-height: 1.3; padding-left: 4px; }
-#tab-status td.etapa-desc div { width: 145px; white-space: normal; }
+#tab-status td.etapa-desc div { width: 190px; white-space: normal; }
 /* sem bordas: cartoes sem contorno e tabela sem divisorias verticais */
 .card { border: 0; }
 #tab-status td.ini, #tab-status th.ini, #tab-status th.grp { border-left: 0; }
@@ -177,8 +184,7 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 /* cabecalho: so o grupo DHL tem fundo (amarelo); os demais ficam sem fundo */
 #tab-status th { background: var(--surface); }
 /* cabecalhos com as mesmas cores dos KPIs (DHL amarelo claro, transporte cinza claro) */
-#tab-status th.h-DHL { background: var(--cor-dhl); }
-#tab-status th.h-TRANSPORTE { background: var(--cor-transp); }
+/* cabecalhos DHL e TRANSPORTE sem cor de fundo (brancos como os demais) */
 .mini-g text.rotulo-seg { font-size: 11px; font-weight: 600; }
 /* rotulos dentro das barras: texto escuro (contraste melhor que branco nessas cores claras),
    numero em negrito cheio e % em peso medio para nao ficar apagado */
@@ -206,8 +212,57 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 .mini-g text.rotulo-dia { fill: var(--ink-2); font-size: 12px; font-weight: 500; }
 .mini-g text.rotulo-dia.hoje { fill: var(--ink-1); font-weight: 700; }
 .mini-g text.rotulo-mes { fill: var(--ink-2); font-size: 12px; font-weight: 600; }
+/* matriz de carretas por hora de fim da consolidacao */
+#tab-consol th, #tab-consol td { padding: 4px 8px; }
+#tab-consol th { background: var(--surface); text-align: center; }
+#tab-consol th:first-child { text-align: left; }
+#tab-consol th.nome-proc { font-weight: 500; color: var(--ink-3); font-size: 11px; }
+#tab-consol th.fora { color: var(--ink-3); font-style: italic; }
+#tab-consol .desde { display: block; margin: 2px 0 0 18px; font-size: 11px; color: var(--ink-3); }
+/* 4 carretas ou mais no mesmo status e hora */
+#tab-consol td.alerta-qtd { color: var(--critical); font-weight: 700; background: color-mix(in srgb, var(--critical) 10%, var(--surface)); }
+#tab-consol td.tot { font-weight: 650; }
+#tab-consol td { text-align: center; }
+#tab-consol td:first-child { text-align: left; }
+#tab-consol tr.expansivel { cursor: pointer; }
+/* linha e coluna sob o mouse (destaque em cruz); o cruzamento fica um pouco mais escuro */
+#tab-consol tr:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }
+#tab-consol .col-hover { background: color-mix(in srgb, var(--ink-1) 5%, var(--surface)) !important; }
+#tab-consol tr:hover td.col-hover { background: color-mix(in srgb, var(--ink-1) 11%, var(--surface)) !important; }
+#tab-consol tr.expansivel:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }
+#tab-consol .seta { display: inline-block; width: 14px; color: var(--ink-3); }
+#tab-consol tr.detalhe td { font-size: 12px; color: var(--ink-2); background: color-mix(in srgb, var(--s1) 5%, var(--surface)); }
+#tab-consol tr.detalhe td:first-child { padding-left: 30px; }
+#tab-consol tr.detalhe td.tot { font-weight: 500; }
+#tab-consol td.vazio { color: var(--grid); }
+#tab-consol th.hoje { color: var(--ink-1); font-weight: 700; }
+#tab-consol tr.sem-fim td { color: var(--ink-2); font-style: italic; border-top: 1px solid var(--axis); }
+#tab-consol td.tot { font-weight: 650; }
+#tab-consol .col-barra { width: 180px; min-width: 120px; }
+#tab-consol .trilho-hora { height: 12px; }
+#tab-consol .barra-hora { height: 100%; border-radius: 0 3px 3px 0; background: color-mix(in srgb, var(--s1) 45%, var(--surface)); }
+#tab-consol .barra-hora.pico { background: var(--s1); }
 /* historico: pedidos sem tempo na etapa (falta data / datas invalidas) */
 #tab-status td.gap { color: var(--critical); font-weight: 600; }
+/* barra do tempo medio da etapa (historico): embaixo do numero, alinhada a direita */
+#tab-status .barra-tempo { width: 90px; height: 5px; margin: 4px 0 0 auto; background: var(--grid); border-radius: 3px;
+  display: flex; justify-content: flex-end; overflow: hidden; }
+#tab-status .barra-tempo i { display: block; height: 100%; border-radius: 3px; background: color-mix(in srgb, var(--s1) 45%, var(--surface)); }
+#tab-status .barra-tempo i.pico { background: var(--s1); }
+#tab-status .barra-tempo i.total { background: var(--ink-2); }
+/* AG. VEÍCULO: folga em verde, atraso em vermelho */
+#tab-status .barra-tempo i.folga { background: #6dbb84; }
+#tab-status .barra-tempo i.atraso { background: var(--critical); }
+/* resumo da chegada do veiculo x janela (linha AG. VEÍCULO do historico) */
+#tab-status td.etapa-desc div.resumo-chegada { width: auto; display: flex; gap: 14px; flex-wrap: wrap; margin-top: 3px;
+  font-size: 11.5px; color: var(--ink-2); white-space: nowrap; }
+/* cada parte com largura fixa: os horarios das datas/transportadoras ficam embaixo do rotulo da etapa */
+#tab-status td.etapa-desc div.resumo-chegada > span { min-width: 210px; }
+#tab-status td.etapa-desc div.resumo-chegada.so-valor { margin-top: 0; }
+#tab-status .resumo-chegada .r-antes b { color: #2f8a52; }
+#tab-status .resumo-chegada .r-depois b { color: var(--critical); }
+#tab-status .resumo-chegada b.r-folga { color: #2f8a52; }
+#tab-status .resumo-chegada b.r-atraso { color: var(--critical); }
 /* numero clicavel (abre o popup) */
 .link-gap { font: inherit; color: var(--critical); font-weight: 600; background: none; border: 0; padding: 0;
   text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
@@ -275,6 +330,10 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
       <div class="tabela-rolagem"><table class="tab-resumo" id="tab-status"></table></div>
       </div>
       </div>
+    </div>
+    <!-- matriz: carretas por hora de fim da consolidacao (linhas) x dia de expedicao (colunas) -->
+    <div class="card">
+      <h2 class="tit-tabela" id="tit-consol">Status atual das carretas por hora</h2>      <div class="tabela-rolagem"><table class="tab-resumo" id="tab-consol"></table></div>
     </div>
   </div>
 
@@ -484,6 +543,8 @@ const STATUS = [
   { nome: "FATURADA", cor: "#6a0f7a", txt: "#fff", resp: "DHL" },
   { nome: "EM DOCA E FATURADA", cor: "#d946a8", txt: "#fff", resp: "TRANSPORTE" },
   { nome: "EM CONSOLIDAÇÃO", cor: "#7c4dcc", txt: "#fff", resp: "TRANSPORTE" },
+  // status2: carga consolidada (AG. CARREGAMENTO) e veiculo ainda sem chegada na doca
+  { nome: "AG. VEÍCULO", cor: "#5f7a99", txt: "#fff", resp: "TRANSPORTE" },
   { nome: "AG. CARREGAMENTO", cor: "#d4b02a", txt: "#0b0b0b", resp: "TRANSPORTE" },
   { nome: "CARREGANDO", cor: "#e0453c", txt: "#fff", resp: "TRANSPORTE" },
   { nome: "CAR. FINALIZADO", cor: "#1f6b6b", txt: "#fff", resp: "TRANSPORTE" },
@@ -491,6 +552,12 @@ const STATUS = [
   { nome: "OUTROS", cor: "#898781", txt: "#fff", resp: "TRANSPORTE" },
 ];
 const RESPONSAVEIS = ["DHL", "TRANSPORTE"];
+// etiquetas dos status pintadas pelo processo, com as cores do grafico: DHL amarelo, TRANSPORTE cinza, EXPEDIDO verde
+STATUS.forEach(s => {
+  if (s.nome === "EXPEDIDO") { s.cor = "#6dbb84"; s.txt = "#0b0b0b"; }
+  else if (s.resp === "DHL") { s.cor = "#f2c14e"; s.txt = "#0b0b0b"; }
+  else { s.cor = "#a9a79f"; s.txt = "#0b0b0b"; }
+});
 const normStatus = s => String(s).trim().toUpperCase();
 function idxStatus(status) {
   const g = STATUS.findIndex(x => x.nome === normStatus(status));
@@ -641,6 +708,61 @@ const TEMPO_DO_STATUS = {
   "CAR. FINALIZADO": { nome: "Carregamento", desc: "início → fim do carregamento", k: 10 },
   "EXPEDIDO": { nome: "Saída do veículo", desc: "fim do carregamento → checkout", k: 11 },
 };
+// tempos so do tempo real (nao entram no historico): calc(r) devolve os minutos de cada TU.
+// AG. VEÍCULO: o veiculo ainda nao chegou na doca, entao compara agora com a janela de expedicao
+// (mesmo sinal do historico): positivo = ainda ha folga ate a janela; negativo = ja atrasado
+const janelaDaTU = r => {
+  const j = String(r[I.chave]).slice(-19);  // chave termina com "dd/mm/aaaa hh:mm:ss"
+  return new Date(+j.slice(6, 10), +j.slice(3, 5) - 1, +j.slice(0, 2), +j.slice(11, 13), +j.slice(14, 16));
+};
+const TEMPO_EXTRA = {
+  // meta: chegar 1h antes da janela -> (janela − 1h) − agora
+  "AG. VEÍCULO": { nome: "Chegada do veículo x meta (1h antes da janela)", desc: "",
+    calc: r => (janelaDaTU(r) - Date.now()) / 60000 - META_CHEGADA_MIN },
+};
+// etapas do historico, na ordem dos status. p = posicao em I.motivo (ETAPAS_MOTIVO no app.py);
+// datas = colunas da etapa em I.datas (popup de divergencias); val(r) = minutos da TU na etapa
+// chegada do veiculo x janela no painel: positivo = chegou antes da janela (folga); negativo = chegou atrasado
+// (sinal invertido em relacao a coluna tempo_chegada_doca_geral da planilha, para leitura direta)
+// meta: o veiculo deve chegar 1 hora antes da janela. O tempo e medido contra (janela − 1h):
+// positivo = chegou antes da meta (folga); negativo = chegou depois da meta (atraso)
+const META_CHEGADA_MIN = 60;
+const T_GERAL_CHEGADA = r => {
+  const v = r[I.tempo + 13] != null ? r[I.tempo + 13] : (r[I.tempo + 14] != null ? -r[I.tempo + 14] : null);
+  return v == null ? null : v - META_CHEGADA_MIN;
+};
+// atraso aparece com sinal de menos (ex: -00:28:50 de atraso)
+const folgaOuAtraso = m => m == null ? "—" : `<b class="${m >= 0 ? "r-folga" : "r-atraso"}">${fmtHms(m)}</b> de ${m >= 0 ? "folga" : "atraso"}`;
+const ETAPAS_HIST = [
+  { s: "EM DOCA E FATURADA", p: 0, datas: [0, 1] },
+  { s: "EM CONSOLIDAÇÃO", p: 1, datas: [1, 2] },
+  // AG. VEÍCULO: chegada na doca x janela (tempo_chegada_doca_geral: negativo = chegou antes da janela)
+  { s: "AG. VEÍCULO", p: 6, datas: [4, 8], nome: "Chegada do veículo x meta (1h antes da janela)", desc: "",
+    val: T_GERAL_CHEGADA, semSoma: true, soCheckout: true,
+    // resumo: TUs que chegaram antes da janela (folga media), depois (atraso medio) e mediana geral
+    // comTexto = linha da etapa (com os rotulos); nas datas/transportadoras so os horarios, alinhados embaixo
+    extra: (rs, comTexto) => {
+      // antes/depois da meta (1h antes da janela)
+      const geral = rs.map(T_GERAL_CHEGADA).filter(v => v != null);
+      const antes = geral.filter(v => v >= 0), depois = geral.filter(v => v < 0);
+      if (!geral.length) return "";
+      const vA = antes.length ? fmtHms(media(antes)) : "—", vD = depois.length ? fmtHms(media(depois)) : "—";
+      if (!comTexto) return `<div class="resumo-chegada so-valor">` +
+        `<span class="r-antes"><b>${vA}</b></span><span class="r-depois"><b>${vD}</b></span>` +
+        `<span>${folgaOuAtraso(media(geral)).replace(/ de (folga|atraso)$/, "")}</span></div>`;
+      return `<div class="resumo-chegada">` +
+        `<span class="r-antes">Antes da meta: <b>${vA}</b> de folga</span>` +
+        `<span class="r-depois">Depois da meta: <b>${vD}</b> de atraso</span>` +
+        `<span>Geral: ${folgaOuAtraso(media(geral))}</span></div>`;
+    } },
+  { s: "AG. CARREGAMENTO", p: 2, datas: [2, 3] },
+  { s: "CARREGANDO", p: 3, datas: [4, 5] },
+  { s: "CAR. FINALIZADO", p: 4, datas: [5, 6] },
+  { s: "EXPEDIDO", p: 5, datas: [6, 7] },
+].map(e => {
+  const t = TEMPO_DO_STATUS[e.s] || {};
+  return { nome: t.nome, desc: t.desc, val: r => r[I.tempo + t.k], ...e, chave: e.s };
+});
 // status expandidos (mostrando transportadoras) sobrevivem a troca de filtro
 const statusAbertos = new Set();
 function renderTabelaStatus(rows) {
@@ -659,23 +781,53 @@ function renderTabelaStatus(rows) {
   // celulas de cada responsavel: preenchidas so na coluna do responsavel do status
   const celulas = (resp, f) => RESPONSAVEIS.map(r => r === resp ? f(r) : `<td class="ini"></td><td></td>`).join("");
   // tempo medio da etapa do status, calculado sobre as TUs passadas (status inteiro ou uma transportadora)
-  const mediaDe = (s, rs) => { const t = TEMPO_DO_STATUS[s]; return t ? media(itensK(rs, t.k).map(x => x[0])) : null; };
+  const mediaDe = (s, rs) => {
+    const t = TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s];
+    if (!t) return null;
+    return t.calc ? media(rs.map(t.calc).filter(v => v != null)) : media(itensK(rs, t.k).map(x => x[0]));
+  };
+  // barra embaixo do tempo: proporcional ao status com o maior tempo de etapa (que fica cheio e mais forte);
+  // AG. VEÍCULO fica sem barra (folga/atraso em relacao a janela, nao duracao de etapa)
+  const barra = (t, escala) => !escala || !(t > 0) ? "" :
+    `<div class="barra-tempo"><i class="${t === escala ? "pico" : ""}" style="width:${(t / escala) * 100}%"></i></div>`;
+  // AG. VEÍCULO tambem entra na escala pelo valor absoluto (folga ou atraso), com barra verde/vermelha
+  const escalaStatus = Math.max(0, ...Object.keys(TEMPO_DO_STATUS).concat(Object.keys(TEMPO_EXTRA)).filter(s => porStatus[s])
+    .map(s => Math.abs(mediaDe(s, porStatus[s]) || 0)));
+  const barraSinal = (v, escala) => !escala || v == null || !v ? "" :
+    `<div class="barra-tempo"><i class="${v >= 0 ? "folga" : "atraso"}" style="width:${Math.min(100, (Math.abs(v) / escala) * 100)}%"></i></div>`;
   const tempoEtapa = s => {
-    const t = TEMPO_DO_STATUS[s];
+    const t = TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s];
     if (!t) return `<td class="ini"></td><td></td>`;
-    // largura fixa no descritivo para ele quebrar linha em vez de alargar a tabela
-    return `<td class="ini tempo">${fmtHms(mediaDe(s, porStatus[s] || []))}</td>` +
-      `<td class="etapa-desc"><div>${t.nome}<br><span class="muted">${t.desc}</span></div></td>`;
+    if (TEMPO_DO_STATUS[s]) {
+      const v = mediaDe(s, porStatus[s] || []);
+      return `<td class="ini tempo">${fmtHms(v)}${barra(v, escalaStatus)}</td>` +
+        `<td class="etapa-desc"><div>${t.nome}<br><span class="muted">${t.desc}</span></div></td>`;
+    }
+    // AG. VEÍCULO: mesmo resumo do historico, mas com o horario atual no lugar da chegada (o veiculo ainda nao
+    // chegou): antes da janela = ainda ha folga ate ela; depois da janela = a janela ja passou (atraso)
+    const vals = (porStatus[s] || []).map(t.calc).filter(v => v != null);
+    const folga = vals.filter(v => v >= 0), atraso = vals.filter(v => v < 0);
+    const resumo = !vals.length ? "" : `<div class="resumo-chegada">` +
+      `<span class="r-antes">Antes da meta: <b>${folga.length ? fmtHms(media(folga)) : "—"}</b> de folga</span>` +
+      `<span class="r-depois">Depois da meta: <b>${atraso.length ? fmtHms(media(atraso)) : "—"}</b> de atraso</span>` +
+      `<span>Geral: ${folgaOuAtraso(media(vals))}</span></div>`;
+    const vm = mediaDe(s, porStatus[s] || []);
+    return `<td class="ini tempo">${fmtHms(vm)}${barraSinal(vm, escalaStatus)}</td>` +
+      `<td class="etapa-desc"><div>${t.nome}</div>${resumo}</td>`;
   };
   // ao expandir: uma linha por transportadora do status, da maior para a menor em pedidos
   const transportadoras = (s, resp) => {
     const porTr = {};
     (porStatus[s] || []).forEach(r => (porTr[r[I.tr]] = porTr[r[I.tr]] || []).push(r));
-    return Object.entries(porTr)
+    const lista = Object.entries(porTr)
       .map(([tr, rs]) => ({ tr, rs, n: rs.reduce((a, r) => a + (r[I.pedidos] || 0), 0) }))
-      .sort((a, b) => b.n - a.n)
+      .sort((a, b) => b.n - a.n);
+    // nas transportadoras a escala e o maior tempo entre elas (a mais demorada fica cheia)
+    const escalaTr = TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s] ? Math.max(0, ...lista.map(o => Math.abs(mediaDe(s, o.rs) || 0))) : 0;
+    const barraTr = v => TEMPO_DO_STATUS[s] ? barra(v, escalaTr) : TEMPO_EXTRA[s] ? barraSinal(v, escalaTr) : "";
+    return lista
       .map(({ tr, rs, n }) => `<tr class="detalhe"><td>${tr}</td>` +
-        (TEMPO_DO_STATUS[s] ? `<td class="ini">${fmtHms(mediaDe(s, rs))}</td><td></td>` : `<td class="ini"></td><td></td>`) +
+        (TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s] ? `<td class="ini">${fmtHms(mediaDe(s, rs))}${barraTr(mediaDe(s, rs))}</td><td></td>` : `<td class="ini"></td><td></td>`) +
         celulas(resp, () => `<td class="ini">${fmtInt(n)}</td><td>${pct(n)}</td>`) +
         `<td class="ini">${fmtInt(n)}</td><td>${pct(n)}</td></tr>`).join("");
   };
@@ -749,14 +901,14 @@ function renderTabelaHistorico(rows) {
       `O histórico considera só dias até ontem (D-1). Escolha um dia anterior ou "Todos" no filtro.</td></tr>`;
     return;
   }
-  const etapas = Object.entries(TEMPO_DO_STATUS).map(([s, t]) => ({ ...t, s, st: STATUS[idxStatus(s)] }));
-  // resumo de um grupo de TUs na etapa k (posicao p em TEMPO_DO_STATUS): tempo medio e pedidos com tempo,
-  // e os pedidos sem tempo separados pelo motivo (falta data / datas fora de ordem ou apos o checkout)
+  const etapas = ETAPAS_HIST;
+  // resumo de um grupo de TUs na etapa e: tempo medio e pedidos com tempo, e os pedidos sem tempo
+  // separados pelo motivo (falta data / datas fora de ordem ou apos o checkout)
   const somaPed = rs => rs.reduce((a, r) => a + (r[I.pedidos] || 0), 0);
-  const resumo = (rs, k, p) => {
-    const com = rs.filter(r => r[I.tempo + k] != null);
-    const motivo = c => rs.filter(r => r[I.tempo + k] == null && String(r[I.motivo] || "")[p] === c);
-    return { com, tempo: media(com.map(r => r[I.tempo + k])), ped: somaPed(com), tus: com.length,
+  const resumo = (rs, e) => {
+    const com = rs.filter(r => e.val(r) != null);
+    const motivo = c => rs.filter(r => e.val(r) == null && String(r[I.motivo] || "")[e.p] === c);
+    return { com, tempo: media(com.map(e.val)), ped: somaPed(com), tus: com.length,
       falta: somaPed(motivo("1")), invalida: somaPed(motivo("2")) };
   };
   const agrupar = (rs, campo) => {
@@ -767,52 +919,76 @@ function renderTabelaHistorico(rows) {
   // pedidos sem tempo em vermelho (zero aparece como traco); com tempo + falta data + datas invalidas = total.
   // o numero e clicavel: abre o popup com as TUs e as colunas divergentes (fontesPopup guarda o grupo de cada celula)
   fontesPopup.length = 0;
-  const gap = (n, rs, p, c, rotulo) => {
+  const gap = (n, rs, e, c, rotulo) => {
     if (!n) return `<td class="muted">—</td>`;
-    fontesPopup.push({ rs, p, c, rotulo });
+    fontesPopup.push({ rs, e, c, rotulo });
     return `<td class="gap"><button class="link-gap" data-f="${fontesPopup.length - 1}" title="ver as TUs">${fmtInt(n)}</button></td>`;
   };
   // linha da etapa com o total de pedidos em negrito (como a coluna Total do tempo real); detalhes sem negrito
-  const celulas = (x, desc = "", negrito = false, rs = [], p = 0, rotulo = "") => `<td class="ini tempo">${fmtHms(x.tempo)}</td><td class="etapa-desc">${desc}</td>` +
-    `<td class="ini ${negrito ? "tot" : ""}">${fmtInt(x.ped)}</td>` + gap(x.falta, rs, p, "1", rotulo) + gap(x.invalida, rs, p, "2", rotulo);
+  // e.extra (AG. VEÍCULO): resumo de antes/depois da janela embaixo do descritivo, so na linha da etapa
+  // barra embaixo do tempo: proporcional ao Total (soma das etapas), que fica com a barra cheia; assim cada etapa
+  // mostra o peso dela no tempo total do transporte. A etapa mais demorada fica em cor mais forte.
+  // a chegada do veiculo x janela (AG. VEÍCULO) nao tem barra: mede folga/atraso, nao duracao de etapa
+  const tempos = etapas.filter(e => !e.semSoma).map(e => resumo(rows, e).tempo || 0);
+  const maxTempo = Math.max(...tempos), totTempo = Math.max(1, tempos.reduce((a, t) => a + t, 0));
+  // AG. VEÍCULO (semSoma): barra verde (folga) ou vermelha (atraso), pelo valor absoluto na mesma escala
+  const barraSinalH = (t, escala) => t == null || !t || !escala ? "" :
+    `<div class="barra-tempo"><i class="${t >= 0 ? "folga" : "atraso"}" style="width:${Math.min(100, (Math.abs(t) / escala) * 100)}%"></i></div>`;
+  const barraTempo = (t, e, total = false) => !total && e && e.semSoma ? barraSinalH(t, totTempo) :
+    (!total && !e) || !(t > 0) ? "" :
+    `<div class="barra-tempo"><i class="${total ? "total" : t === maxTempo ? "pico" : ""}" style="width:${Math.min(100, (t / totTempo) * 100)}%"></i></div>`;
+  // nas datas/transportadoras abertas (escala = maior tempo do grupo aberto): a mais demorada fica cheia
+  const barraDetalhe = (t, e, escala) => e && e.semSoma ? barraSinalH(t, escala) : !escala || !e || !(t > 0) ? "" :
+    `<div class="barra-tempo"><i class="${t === escala ? "pico" : ""}" style="width:${(t / escala) * 100}%"></i></div>`;
+  const celulas = (x, desc = "", negrito = false, rs = [], e = null, rotulo = "", escala = 0) =>
+    `<td class="ini tempo">${fmtHms(x.tempo)}${negrito ? barraTempo(x.tempo, e) : barraDetalhe(x.tempo, e, escala)}</td>` +
+    `<td class="etapa-desc">${desc}${e && e.extra ? e.extra(rs, negrito) : ""}</td>` +
+    `<td class="ini ${negrito ? "tot" : ""}">${fmtInt(x.ped)}</td>` + gap(x.falta, rs, e, "1", rotulo) + gap(x.invalida, rs, e, "2", rotulo);
   const seta = (pode, aberto) => `<span class="seta">${pode ? (aberto ? "▾" : "▸") : ""}</span>`;
 
   let corpo = "";
-  etapas.forEach((e, p) => {
-    const x = resumo(rows, e.k, p), aberto = histAbertos.has(String(e.k)), pode = rows.length > 0;
-    corpo += `<tr class="${pode ? "expansivel" : ""}" data-a="${e.k}"><td>${seta(pode, aberto)}` +
-      `<span class="chip" style="background:${e.st.cor};color:${e.st.txt}">${e.s}</span></td>` +
-      celulas(x, `<div>${e.nome}<br><span class="muted">${e.desc}</span></div>`, true, rows, p, "todas as datas") + `</tr>`;
+  etapas.forEach(e => {
+    const x = resumo(rows, e), aberto = histAbertos.has(e.chave), pode = rows.length > 0, st = STATUS[idxStatus(e.s)];
+    corpo += `<tr class="${pode ? "expansivel" : ""}" data-a="${e.chave}"><td>${seta(pode, aberto)}` +
+      `<span class="chip" style="background:${st.cor};color:${st.txt}">${e.s}</span></td>` +
+      celulas(x, `<div>${e.nome}${e.desc ? `<br><span class="muted">${e.desc}</span>` : ""}</div>`, true, rows, e, "todas as datas") + `</tr>`;
     if (!aberto || !pode) return;
     if (modo === "hist-dia") {
       // por data: uma linha por data de expedicao, da mais recente para a mais antiga
       // (todas as TUs do recorte, para as datas com pedidos sem tempo tambem aparecerem)
       const porDia = agrupar(rows, I.dia);
-      Object.keys(porDia).sort().reverse().forEach(d => {
+      const dias = Object.keys(porDia).sort().reverse().map(d => ({ d, x: resumo(porDia[d], e) }));
+      const escala = Math.max(0, ...dias.map(o => Math.abs(o.x.tempo || 0)));
+      dias.forEach(({ d, x: xd }) => {
         const rotulo = `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
-        corpo += `<tr class="detalhe"><td>${rotulo}</td>${celulas(resumo(porDia[d], e.k, p), "", false, porDia[d], p, rotulo)}</tr>`;
+        corpo += `<tr class="detalhe"><td>${rotulo}</td>${celulas(xd, "", false, porDia[d], e, rotulo, escala)}</tr>`;
       });
     } else {
       // por transportadora: todas as datas do recorte juntas, da transportadora com mais pedidos para a com menos
-      Object.entries(agrupar(rows, I.tr))
-        .map(([tr, rs]) => ({ tr, rs, x: resumo(rs, e.k, p) }))
-        .sort((a, b) => (b.x.ped + b.x.falta + b.x.invalida) - (a.x.ped + a.x.falta + a.x.invalida))
-        .forEach(({ tr, rs, x: xt }) => { corpo += `<tr class="detalhe"><td>${tr}</td>${celulas(xt, "", false, rs, p, tr)}</tr>`; });
+      const trs = Object.entries(agrupar(rows, I.tr))
+        .map(([tr, rs]) => ({ tr, rs, x: resumo(rs, e) }))
+        .sort((a, b) => (b.x.ped + b.x.falta + b.x.invalida) - (a.x.ped + a.x.falta + a.x.invalida));
+      const escala = Math.max(0, ...trs.map(o => Math.abs(o.x.tempo || 0)));
+      trs.forEach(({ tr, rs, x: xt }) => { corpo += `<tr class="detalhe"><td>${tr}</td>${celulas(xt, "", false, rs, e, tr, escala)}</tr>`; });
     }
   });
 
-  // total: tempo = soma dos tempos medios das etapas (tempo medio do transporte, da puxada ao checkout);
+  // total: tempo = soma dos tempos medios das etapas do processo (da puxada ao checkout); a chegada do
+  // veiculo x janela (AG. VEÍCULO) nao entra na soma, porque mede pontualidade e nao uma etapa do processo.
   // pedidos = todos os pedidos do recorte (cada TU contada uma vez, mesmo passando por varias etapas)
-  const somaTempo = etapas.reduce((a, e, p) => a + (resumo(rows, e.k, p).tempo || 0), 0);
+  const somaTempo = etapas.filter(e => !e.semSoma).reduce((a, e) => a + (resumo(rows, e).tempo || 0), 0);
+  // total das colunas de falta data / datas invalidas = soma das etapas (o mesmo pedido pode contar em mais de uma)
+  const totGap = campo => etapas.reduce((a, e) => a + resumo(rows, e)[campo], 0);
+  const celTotGap = n => `<td class="gap" title="soma das etapas: o mesmo pedido pode contar em mais de uma">${n ? fmtInt(n) : "—"}</td>`;
   const totPed = somaPed(rows);
   $("tab-status").innerHTML =
     `<tr><th rowspan="2">Status TU</th><th class="grp" colspan="2">Tempo médio da etapa</th><th class="grp" colspan="3">Pedidos</th></tr>` +
     `<tr class="sub"><th class="ini">Tempo</th><th style="text-align:left">Etapa (cálculo)</th>` +
     `<th class="ini">Com tempo</th><th title="uma das datas da etapa não foi apontada">Falta data</th>` +
     `<th title="datas fora de ordem ou depois do checkout: tempo descartado">Datas inválidas</th></tr>` + corpo +
-    `<tr class="total"><td>Total</td><td class="ini tempo">${fmtHms(rows.length ? somaTempo : null)}</td>` +
+    `<tr class="total"><td>Total</td><td class="ini tempo">${fmtHms(rows.length ? somaTempo : null)}${rows.length ? barraTempo(somaTempo, null, true) : ""}</td>` +
     `<td class="etapa-desc"><div><span class="muted">soma dos tempos médios das etapas</span></div></td>` +
-    `<td class="ini">${fmtInt(totPed)}</td><td></td><td></td></tr>`;
+    `<td class="ini">${fmtInt(totPed)}</td>${celTotGap(totGap("falta"))}${celTotGap(totGap("invalida"))}</tr>`;
   $("tab-status").querySelectorAll("tr.expansivel").forEach(tr => tr.onclick = () => {
     const a = tr.dataset.a;
     histAbertos.has(a) ? histAbertos.delete(a) : histAbertos.add(a);
@@ -826,26 +1002,112 @@ function renderTabelaHistorico(rows) {
   });
 }
 
+// ===== matriz: status vivo das carretas por hora (dia escolhido no filtro) =====
+// cada carreta (chave, igual ao ATS) entra UMA vez: na linha do status atual (o da TU menos avancada) e
+// na hora do ultimo apontamento do processo (quando entrou nesse status). Total da coluna = carretas que
+// estao naquele status agora; a soma das colunas = carretas do dia.
+// colunas = horas fixas (22h da vespera ate 21h); fora disso, "Antes 22h" (vespera) / "Depois 22h";
+// sem nenhum apontamento de transporte (ainda na DHL) = "Sem registro"
+const PONTOS_CONSOL = [0, 1, 2, 3, 4, 5, 6, 7];  // I.datas: fim fat., ATS, NF, fim consol., chegada doca, inicio carreg., fim carreg., checkout
+const NOMES_PONTO = ["fim do faturamento", "ATS (puxada)", "entrada NF", "fim da consolidação", "chegada na doca", "início do carregamento", "fim do carregamento", "checkout"];
+// horas na ordem do turno: comeca as 22h da vespera (22, 23, 00 ... 21)
+const HORAS_CONSOL = [22, 23, ...Array(22).keys()].map(h => String(h).padStart(2, "0"));
+const consolAbertas = new Set();  // horas expandidas (mostrando as transportadoras)
+function renderMatrizConsolidacao(rows) {
+  const dia = selDia.value || hoje;
+  $("tit-consol").textContent = `Status atual das carretas por hora · expedição ${fmtDia(dia)}`;
+  const car = {};
+  rows.filter(r => r[I.dia] === dia).forEach(r => {
+    const c = car[r[I.chave]] = car[r[I.chave]] || { tr: r[I.tr], st: 99, ultimo: "", ponto: -1 };
+    c.st = Math.min(c.st, idxStatus(r[I.status]));
+    const ds = r[I.datas] || [];
+    PONTOS_CONSOL.forEach(pt => { if ((ds[pt] || "") > c.ultimo) { c.ultimo = ds[pt]; c.ponto = pt; } });
+  });
+  const lista = Object.values(car);
+  // colunas: so os status em que ha carreta agora, na ordem do processo
+  const colunas = STATUS.map((st, i) => ({ st, i })).filter(x => lista.some(c => c.st === x.i));
+  // apontamento mais comum de cada coluna (mostrado embaixo do status: "desde ...")
+  const desde = colunas.map(x => {
+    const n = {};
+    lista.filter(c => c.st === x.i && c.ponto >= 0).forEach(c => { n[c.ponto] = (n[c.ponto] || 0) + 1; });
+    const pt = Object.keys(n).sort((u, v) => n[v] - n[u])[0];
+    return pt != null ? "desde " + NOMES_PONTO[pt] : "";
+  });
+  const [a, m, d] = dia.split("-").map(Number);
+  const ini = new Date(a, m - 1, d - 1, 22), fimJanela = new Date(a, m - 1, d, 22);
+  const horaDe = c => {
+    const s = c.ultimo;
+    if (!s) return "sem";
+    const t = new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), +s.slice(11, 13), +s.slice(14, 16));
+    if (t < ini) return "antes";
+    if (t >= fimJanela) return "depois";
+    return s.slice(11, 13);
+  };
+  // colunas = horas (22h da vespera ate 21h); "Antes 22h", "Depois 22h" e "Sem registro" so quando tem carreta
+  const ROTULO_HORA = { antes: "Antes 22h", depois: "Depois 22h", sem: "Sem registro" };
+  const horas = ["antes"].concat(HORAS_CONSOL, ["depois", "sem"])
+    .filter(h => !ROTULO_HORA[h] || lista.some(c => horaDe(c) === h));
+  // alerta: 4 carretas ou mais no mesmo status e na mesma hora ficam em vermelho (nao vale para a linha Total)
+  const LIMITE_ALERTA = 4;
+  const celula = (n, alerta) => !n ? `<td class="vazio">·</td>` : `<td class="${alerta && n >= LIMITE_ALERTA ? "alerta-qtd" : ""}">${fmtInt(n)}</td>`;
+  // linha de um grupo de carretas: contagem por hora + total + % sobre as carretas do dia
+  const linha = (cls, rotulo, cs, extra = "") =>
+    `<tr class="${cls}"${extra}><td>${rotulo}</td>${horas.map(h => celula(cs.filter(c => horaDe(c) === h).length, cls !== "total")).join("")}` +
+    `<td class="ini tot">${fmtInt(cs.length)}</td><td class="tot">${fmtPct(lista.length ? cs.length / lista.length : null)}</td></tr>`;
+  const corpo = colunas.map((x, j) => {
+    const cs = lista.filter(c => c.st === x.i), aberta = consolAbertas.has(x.st.nome);
+    const rot = `<span class="seta">${aberta ? "▾" : "▸"}</span><span class="chip" style="background:${x.st.cor};color:${x.st.txt}">${x.st.nome}</span>` +
+      (desde[j] ? `<span class="desde">${desde[j]}</span>` : "");
+    let html = linha("expansivel", rot, cs, ` data-h="${x.st.nome}"`);
+    if (aberta) {
+      // transportadoras do status, da que tem mais carretas para a que tem menos
+      const porTr = {};
+      cs.forEach(c => (porTr[c.tr] = porTr[c.tr] || []).push(c));
+      Object.entries(porTr).sort((u, v) => v[1].length - u[1].length)
+        .forEach(([tr, ct]) => { html += linha("detalhe", tr, ct); });
+    }
+    return html;
+  }).join("");
+  const tab = $("tab-consol");
+  tab.innerHTML = !lista.length ? `<tr><td class="muted" style="text-align:left;padding:12px 8px">Sem carretas para este dia.</td></tr>` :
+    `<tr><th>Status atual</th>${horas.map(h => `<th class="${ROTULO_HORA[h] ? "fora" : ""}">${ROTULO_HORA[h] || h + "h"}</th>`).join("")}<th class="ini">Total</th><th>%</th></tr>` +
+    corpo + linha("total", "Total carretas", lista);
+  // destaque em cruz: ao passar o mouse, alem da linha, a coluna (status) da celula tambem fica cinza
+  const limpar = () => tab.querySelectorAll(".col-hover").forEach(c => c.classList.remove("col-hover"));
+  tab.onmouseover = ev => {
+    const cel = ev.target.closest("td");
+    limpar();
+    if (!cel || cel.cellIndex < 1) return;
+    [...tab.rows].forEach(tr => tr.cells[cel.cellIndex] && tr.cells[cel.cellIndex].classList.add("col-hover"));
+  };
+  tab.onmouseleave = limpar;
+  tab.querySelectorAll("tr.expansivel").forEach(tr => tr.onclick = () => {
+    const h = tr.dataset.h;
+    consolAbertas.has(h) ? consolAbertas.delete(h) : consolAbertas.add(h);
+    salvarEstado();
+    renderMatrizConsolidacao(D.linhas);
+  });
+}
+
 // ===== popup de divergencias: TUs sem tempo na etapa e as colunas da planilha que causaram =====
 const fontesPopup = [];
 // colunas da planilha (nome original da Sheet1) na ordem de I.datas
 const DATAS_POPUP = ["FIM. FATURAMENTO", "CONF. PUXADA (ATS)", "ENT. PROT. NF", "FIM DE CONSOLIDAÇÃO",
-  "CHEGADA DOCA", "INICIO DE CARREG.", "FIM DE CARREGAM.", "CHECKOUT"];
+  "CHEGADA DOCA", "INICIO DE CARREG.", "FIM DE CARREGAM.", "CHECKOUT", "JANELA DE EXPEDIÇÃO"];
 const CHECKOUT = 7;
-// datas de inicio e fim de cada etapa do historico (posicao em I.datas), na ordem de TEMPO_DO_STATUS
-const DATAS_ETAPA = [[0, 1], [1, 2], [2, 3], [4, 5], [5, 6], [6, 7]];
 const fmtDataHora = s => s ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)} ${s.slice(11, 16)}` : "";
 function abrirPopup(f, ev) {
-  const [a, b] = DATAS_ETAPA[f.p], etapa = Object.values(TEMPO_DO_STATUS)[f.p];
-  const tus = f.rs.filter(r => r[I.tempo + etapa.k] == null && String(r[I.motivo] || "")[f.p] === f.c)
+  const etapa = f.e, [a, b] = etapa.datas;
+  const tus = f.rs.filter(r => etapa.val(r) == null && String(r[I.motivo] || "")[etapa.p] === f.c)
     .sort((x, y) => (y[I.pedidos] || 0) - (x[I.pedidos] || 0));
   // motivo de cada TU e as colunas a corrigir
   const itens = tus.map(r => {
     const d = r[I.datas] || [];
     if (f.c === "1") return { r, d, motivo: "data não apontada", ruins: [a, b].filter(j => !d[j]) };
-    if (d[b] < d[a]) return { r, d, motivo: "fim antes do início", ruins: [a, b] };
+    // chegada x janela: chegar antes da janela e normal; so e invalida quando a chegada passa do checkout
+    if (!etapa.soCheckout && d[b] < d[a]) return { r, d, motivo: "fim antes do início", ruins: [a, b] };
     return { r, d, motivo: "data depois do checkout",
-      ruins: [a, b].filter(j => j !== CHECKOUT && d[CHECKOUT] && d[j] > d[CHECKOUT]).concat([CHECKOUT]) };
+      ruins: [a, b].filter(j => j !== CHECKOUT && j !== 8 && d[CHECKOUT] && d[j] > d[CHECKOUT]).concat([CHECKOUT]) };
   });
   // colunas mostradas: so as duas datas do calculo da etapa; o CHECKOUT entra so quando alguma TU
   // foi descartada pela regra "data depois do checkout" (ele e a referencia dessa regra)
@@ -981,8 +1243,7 @@ function render() {
   if (ehHist()) {
     const porData = modo === "hist-dia";
     $("tit-status").textContent = `Histórico dos tempos médios por ${porData ? "data" : "transportadora"} (D-1)`;
-    $("sub-status").textContent = `Dias de expedição até ontem · expanda a etapa para ver ${porData ? "as datas de expedição" : "as transportadoras"}` +
-      ` · Com tempo + Falta data + Datas inválidas = total de pedidos`;
+    $("sub-status").textContent = "";
     renderTabelaHistorico(filtrarHistorico(rows));
   } else {
     $("tit-status").textContent = "Pedidos por status TU e responsável";
@@ -991,6 +1252,8 @@ function render() {
   }
   $("f-modo").querySelectorAll("button").forEach(b => b.classList.toggle("ativo", b.dataset.m === modo));
   renderPedidos(D.linhas);
+  // matriz do dia escolhido no filtro (sem filtro: hoje)
+  renderMatrizConsolidacao(D.linhas);
 }
 
 // ===== estado da tela (modo, dia e linhas abertas) =====
@@ -1001,7 +1264,7 @@ const CHAVE_ESTADO = "painel-drive-estado";
 function salvarEstado() {
   try {
     localStorage.setItem(CHAVE_ESTADO, JSON.stringify({
-      t: Date.now(), modo, dia: selDia.value, status: [...statusAbertos], hist: [...histAbertos],
+      t: Date.now(), modo, dia: selDia.value, status: [...statusAbertos], hist: [...histAbertos], consol: [...consolAbertas],
     }));
   } catch (e) { /* navegador sem armazenamento: segue sem lembrar */ }
 }
@@ -1013,6 +1276,7 @@ try {
     else if (ehHist()) selDia.value = "";
     (e.status || []).forEach(s => statusAbertos.add(s));
     (e.hist || []).forEach(s => histAbertos.add(s));
+    (e.consol || []).forEach(s => consolAbertas.add(s));
   }
 } catch (e) { /* estado invalido ou indisponivel: comeca do padrao */ }
 
