@@ -23,17 +23,18 @@ def conectar(info=None):
     return gspread.service_account(filename=str(Path(__file__).resolve().parent / "credenciais.json"))
 
 
-def ler_bruto(sh):
+def ler_bruto(sh, aba=ABA):
     # UNFORMATTED_VALUE traz o valor real da celula (serial de data, numero, etc),
     # evitando que a formatacao de exibicao do Sheets esconda informacao (ex: ano)
-    return sh.worksheet(ABA).get_all_values(value_render_option="UNFORMATTED_VALUE")
+    return sh.worksheet(aba).get_all_values(value_render_option="UNFORMATTED_VALUE")
 
 
 def converter_data(coluna):
     # datas antes de 2000 sao erro de digitacao (ex: so hora "05:00" vira 30/12/1899 05:00,
     # ou so um numero "3" vira 02/01/1900) e ficam vazias. 36526 = serial de 01/01/2000
     serial = pd.to_numeric(coluna, errors="coerce")
-    serial = serial.where(serial >= 36526)
+    # tambem descarta valores absurdos acima de 2100 (73051 = serial de 01/01/2100), que quebrariam a conversao
+    serial = serial.where((serial >= 36526) & (serial <= 73051))
     return pd.to_datetime(serial, unit="D", origin="1899-12-30")
 
 
@@ -60,7 +61,13 @@ def tratar(bruto):
 
     # ===== 3. Conversao de data_exp, data_limite_ats e data_ats =====
     # data_exp e data_ats vem como serial de data/hora do Sheets (epoch 1899-12-30)
-    df["data_exp"] = pd.to_datetime(df["data_exp"].astype(float), unit="D", origin="1899-12-30")
+    # janela sem data valida (ex: so a hora "07:00", que vira 0,29) nao tem como ser tratada: a linha sai, com aviso
+    df["data_exp"] = converter_data(df["data_exp"])
+    sem_data = df["data_exp"].isna()
+    if sem_data.any():
+        print(f"Aviso: {sem_data.sum()} linha(s) com janela de expedicao sem data valida foram descartadas "
+              f"(TUs: {', '.join(df.loc[sem_data, 'TU'].astype(str).head(10))})")
+        df = df[~sem_data].reset_index(drop=True)
     df["data_limite_ats"] = df["data_exp"] - pd.Timedelta(hours=3)
 
     df["data_ats"] = converter_data(df["data_ats"])
@@ -213,8 +220,8 @@ def tratar(bruto):
     return df
 
 
-def gravar_etl(sh, df, agora):
-    # ===== 5. Envio para a aba "etl" =====
+def gravar_etl(sh, df, agora, aba="etl"):
+    # ===== 5. Envio para a aba "etl" (ou outra aba, ex: historico_etl) =====
     df_envio = df[["data_exp", "data_limite_ats", "data_criacao_tu", "data_criacao_pacote", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_fim_faturamento", "data_ats", "data_ent_nf", "data_fim_consolidacao", "data_checkin", "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout","tempo_criacao_pacote","tempo_espera_picking","tempo_coleta","tempo_conferencia","tempo_faturamento","tempo_puxada","tempo_ats","tempo_espera_consolidacao","tempo_consolidacao","tempo_checkin_ate_doca","tempo_chegada_doca_antes","tempo_chegada_doca_depois","tempo_chegada_doca_geral","tempo_espera_carregamento","tempo_carregamento","tempo_saida_veiculo","sla_faturamento","sla_ats","sla_carregamento","sla_expedicao","sla_veiculos","status_tu", "status2", "qtde_pedidos", "transportador", "TU", "horario", "chave",]].copy()
     for col in ["data_exp", "data_limite_ats", "data_criacao_tu", "data_criacao_pacote", "data_inicio_coleta", "data_fim_coleta", "data_fim_conferencia", "data_fim_faturamento", "data_ats", "data_ent_nf", "data_fim_consolidacao", "data_checkin", "data_chegada_doca", "data_inicio_carregamento", "data_carregamento", "data_checkout"]:
         df_envio[col] = df_envio[col].dt.strftime("%d/%m/%Y %H:%M:%S").fillna("")
@@ -227,7 +234,7 @@ def gravar_etl(sh, df, agora):
     # ISO para o Sheets (en_US) gravar como data real
     df_envio["data_atualizacao"] = agora.strftime("%Y-%m-%d %H:%M:%S")
 
-    ws_etl = sh.worksheet("etl")
+    ws_etl = sh.worksheet(aba)
     ws_etl.clear()
     ws_etl.resize(rows=len(df_envio) + 1, cols=len(df_envio.columns))
     ws_etl.update([df_envio.columns.tolist()] + df_envio.values.tolist(), value_input_option="USER_ENTERED")
@@ -244,22 +251,27 @@ def gravar_etl(sh, df, agora):
     col_atualizacao = gspread.utils.rowcol_to_a1(1, len(df_envio.columns)).rstrip("1")
     ws_etl.format(f"{col_atualizacao}2:{col_atualizacao}{len(df_envio) + 1}",
                   {"numberFormat": {"type": "DATE_TIME", "pattern": "dd/mm/yyyy hh:mm:ss"}})
-    print(f"Enviado para a aba 'etl': {len(df_envio)} linhas (atualizado em {agora:%d/%m/%Y %H:%M:%S})")
+    print(f"Enviado para a aba '{aba}': {len(df_envio)} linhas (atualizado em {agora:%d/%m/%Y %H:%M:%S})")
 
 
-def gravar_resumo(sh, df):
-    # ===== 6. Resumo de SLAs por dia (ats_carreta, ats_pedidos, ats_tu) =====
+SLAS_CARRETA_EXTRAS = [("chegada", "sla_veiculos"), ("carregamento", "sla_carregamento"), ("expedicao", "sla_expedicao")]
+
+
+def montar_resumo(df, extras=False):
+    # resumo de SLA ATS por dia (carretas, pedidos e TUs: total, dentro, fora e %), com separadores.
+    # extras=True (aba metrica): acrescenta, por carreta, os SLAs de chegada do veiculo, carregamento e expedicao
     df_resumo_base = df.copy()
     df_resumo_base["data_exp_dia"] = df_resumo_base["data_exp"].dt.date
     df_resumo_base["qtde_pedidos"] = pd.to_numeric(df_resumo_base["qtde_pedidos"], errors="coerce").fillna(0)
 
-    # uma carreta (chave) agrupa varias TUs que podem ter sla_ats diferentes entre si.
+    # uma carreta (chave) agrupa varias TUs que podem ter sla diferentes entre si.
     # o status da carreta usa a pior ocorrencia: fora_do_prazo > em_aberto > dentro_do_prazo
     PRIORIDADE_SLA = {"fora_do_prazo": 2, "em_aberto": 1, "dentro_do_prazo": 0}
-    status_carreta = df_resumo_base.groupby("chave").agg(
-        data_exp_dia=("data_exp_dia", "first"),
-        sla_carreta=("sla_ats", lambda s: max(s, key=lambda v: PRIORIDADE_SLA[v])),
-    )
+    pior = lambda s: max(s, key=lambda v: PRIORIDADE_SLA.get(v, 1))
+    agg = {"data_exp_dia": ("data_exp_dia", "first"), "sla_carreta": ("sla_ats", pior)}
+    for nome, coluna in SLAS_CARRETA_EXTRAS:
+        agg[f"sla_{nome}"] = (coluna, pior)
+    status_carreta = df_resumo_base.groupby("chave").agg(**agg)
 
     def resumo_metrica(grupo, coluna, agregacao):
         dentro = grupo.loc[grupo["sla_ats"] == "dentro_do_prazo", coluna]
@@ -280,7 +292,7 @@ def gravar_resumo(sh, df):
         pedidos_total, pedidos_dentro, pedidos_fora = resumo_metrica(grupo, "qtde_pedidos", "soma")
         tu_total, tu_dentro, tu_fora = resumo_metrica(grupo, "TU", "nunique")
 
-        linhas_resumo.append({
+        linha = {
             "data_exp": dia.strftime("%d/%m/%Y"),
             "ats_carreta_total": carreta_total,
             "ats_carreta_dentro": carreta_dentro,
@@ -296,30 +308,100 @@ def gravar_resumo(sh, df):
             "ats_tu_dentro": tu_dentro,
             "ats_tu_fora": tu_fora,
             "ats_tu_pct": pct(tu_dentro, tu_total),
-        })
+        }
+        if extras:
+            # mesma base de carretas do ATS (total = ats_carreta_total); em aberto nao entra em dentro nem fora
+            for nome, _ in SLAS_CARRETA_EXTRAS:
+                dentro = int((carretas_dia[f"sla_{nome}"] == "dentro_do_prazo").sum())
+                fora = int((carretas_dia[f"sla_{nome}"] == "fora_do_prazo").sum())
+                linha[f"{nome}_carreta_total"] = carreta_total
+                linha[f"{nome}_carreta_dentro"] = dentro
+                linha[f"{nome}_carreta_fora"] = fora
+                linha[f"{nome}_carreta_pct"] = pct(dentro, carreta_total)
+        linhas_resumo.append(linha)
 
-    df_resumo = pd.DataFrame(linhas_resumo)
+    return pd.DataFrame(linhas_resumo)
+
+
+def gravar_resumo(sh, df, aba="mes_atual", linha_dados=5, cabecalho=False, so_numeros=False):
+    # ===== 6. Resumo de SLAs por dia (ats_carreta, ats_pedidos, ats_tu) =====
+    # aba "mes_atual": linhas 1 a 4 montadas a mao, dados a partir da linha 5 (padrao).
+    # outras abas (ex: metrica): cabecalho=True grava os nomes das colunas na linha anterior aos dados
+    df_resumo = montar_resumo(df, extras=so_numeros)
+    # so_numeros (ex: aba metrica): sem as colunas de percentual e sem os separadores
+    if so_numeros:
+        df_resumo = df_resumo[[c for c in df_resumo.columns if not c.endswith("_pct") and not c.startswith("_separador")]]
+    # abas novas (cabecalho=True, ex: metrica): data em ISO (aaaa-mm-dd) para o Sheets em locale en_US gravar a
+    # data certa (com "dd/mm/aaaa" ele le mes/dia e troca dia e mes); a exibicao fica dd/mm/aaaa pelo formato abaixo
+    if cabecalho and len(df_resumo):
+        df_resumo["data_exp"] = pd.to_datetime(df_resumo["data_exp"], format="%d/%m/%Y").dt.strftime("%Y-%m-%d")
+        df_resumo = df_resumo.rename(columns={"data_exp": "Data"})  # nas abas novas (metrica) a coluna se chama "Data"
 
     # linhas 1 a 3 da aba "resumo" sao montadas manualmente (cabecalho agrupado + linha "Total"),
     # entao apenas os dados sao escritos, a partir da linha 4
-    LINHA_DADOS = 5
-    ws_resumo = sh.worksheet("mes_atual")
+    LINHA_DADOS = linha_dados
+    ws_resumo = sh.worksheet(aba)
     num_cols = len(df_resumo.columns)
     ultima_coluna = gspread.utils.rowcol_to_a1(1, num_cols).rstrip("0123456789")
     ultima_linha = LINHA_DADOS + len(df_resumo) - 1
     if ws_resumo.row_count < ultima_linha:
         ws_resumo.resize(rows=ultima_linha, cols=num_cols)
-    ws_resumo.batch_clear([f"A{LINHA_DADOS}:{ultima_coluna}{ws_resumo.row_count}"])
+    if cabecalho:
+        # aba sem layout manual (ex: metrica): limpa tudo, para nao sobrar coluna antiga quando o formato muda
+        ws_resumo.clear()
+    else:
+        ws_resumo.batch_clear([f"A{LINHA_DADOS}:{ultima_coluna}{ws_resumo.row_count}"])
 
+    if cabecalho:
+        ws_resumo.update(range_name=f"A{LINHA_DADOS - 1}", values=[df_resumo.columns.tolist()], value_input_option="USER_ENTERED")
     ws_resumo.update(range_name=f"A{LINHA_DADOS}", values=df_resumo.values.tolist(), value_input_option="USER_ENTERED")
 
+    if cabecalho and len(df_resumo):
+        ws_resumo.format(f"A{LINHA_DADOS}:A{ultima_linha}", {"numberFormat": {"type": "DATE", "pattern": "dd/mm/yyyy"}})
     # formata as colunas de percentual com 1 casa decimal
     colunas_pct = [i for i, c in enumerate(df_resumo.columns, start=1) if c.endswith("_pct")]
     for col_idx in colunas_pct:
         letra = gspread.utils.rowcol_to_a1(1, col_idx).rstrip("0123456789")
         ws_resumo.format(f"{letra}{LINHA_DADOS}:{letra}{ultima_linha}", {"numberFormat": {"type": "PERCENT", "pattern": "0.0%"}})
 
-    print(f"Enviado para a aba 'resumo': {len(df_resumo)} linhas")
+    print(f"Enviado para a aba '{aba}': {len(df_resumo)} linhas")
+
+
+def empilhar_metrica(sh, df, aba="metrica"):
+    # aba metrica = historico dos meses fechados (gravado pelo sheets_conexao_historico.py) + o mes atual
+    # empilhado embaixo. A cada rodada substitui so as linhas do mes atual (datas >= 1o dia do mes dos dados);
+    # as linhas dos meses anteriores ficam como estao. Na virada do mes, o mes que fechou fica gravado.
+    resumo = montar_resumo(df, extras=True)
+    if resumo.empty:
+        return
+    resumo = resumo[[c for c in resumo.columns if not c.endswith("_pct") and not c.startswith("_separador")]]
+    datas = pd.to_datetime(resumo["data_exp"], format="%d/%m/%Y")
+    inicio_mes = pd.Timestamp(datas.min().year, datas.min().month, 1)
+    resumo["data_exp"] = datas.dt.strftime("%Y-%m-%d")
+    resumo = resumo.rename(columns={"data_exp": "Data"})  # na metrica a coluna de data se chama "Data"
+
+    ws = sh.worksheet(aba)
+    cab = ws.row_values(1)
+    # aba ainda com o cabecalho antigo (sem as colunas veiculo/carregamento/expedicao): grava so as colunas que ela tem
+    if cab and cab != resumo.columns.tolist() and cab == resumo.columns.tolist()[:len(cab)]:
+        resumo = resumo[cab]
+    if cab != resumo.columns.tolist():
+        print(f"Aviso: cabecalho da aba '{aba}' diferente do esperado; metrica nao atualizada")
+        return
+    # datas ja gravadas (serial do Sheets) -> primeira linha do mes atual (ou o fim, se ainda nao existe)
+    col_a = ws.col_values(1, value_render_option="UNFORMATTED_VALUE")[1:]
+    seriais = pd.to_numeric(pd.Series(col_a, dtype=object), errors="coerce")
+    datas_gravadas = pd.to_datetime(seriais, unit="D", origin="1899-12-30")
+    do_mes = (datas_gravadas >= inicio_mes).to_numpy().nonzero()[0]
+    linha_ini = (do_mes[0] if len(do_mes) else len(col_a)) + 2   # +1 cabecalho, +1 base 1
+    ultima = max(ws.row_count, linha_ini + len(resumo))
+    if ws.row_count < ultima:
+        ws.resize(rows=ultima)
+    ultima_col = gspread.utils.rowcol_to_a1(1, len(resumo.columns)).rstrip("0123456789")
+    ws.batch_clear([f"A{linha_ini}:{ultima_col}{ws.row_count}"])
+    ws.update(range_name=f"A{linha_ini}", values=resumo.astype(object).values.tolist(), value_input_option="USER_ENTERED")
+    ws.format(f"A{linha_ini}:A{linha_ini + len(resumo) - 1}", {"numberFormat": {"type": "DATE", "pattern": "dd/mm/yyyy"}})
+    print(f"Mes atual empilhado na aba '{aba}': {len(resumo)} dias a partir da linha {linha_ini}")
 
 
 def executar(sh):
@@ -328,6 +410,7 @@ def executar(sh):
     agora = datetime.now(BRASILIA)
     gravar_etl(sh, df, agora)
     gravar_resumo(sh, df)
+    empilhar_metrica(sh, df)
     return df, agora
 
 
