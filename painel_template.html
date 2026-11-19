@@ -283,7 +283,13 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 .mini-g text.rotulo-mes { fill: var(--ink-2); font-size: 12px; font-weight: 600; }/* matriz de carretas por hora de fim da consolidacao */
 #tab-consol th, #tab-consol td { padding: 4px 8px; }#tab-consol th { background: var(--surface); text-align: center; }#tab-consol th:first-child { text-align: left; }#tab-consol th.nome-proc { font-weight: 500; color: var(--ink-3); font-size: 11px; }#tab-consol th.fora { color: var(--ink-3); font-style: italic; }#tab-consol .desde { display: block; margin: 2px 0 0 18px; font-size: 11px; color: var(--ink-3); }
 /* janela de expedicao ao lado do nome da transportadora */
-.janela-tr { margin-left: 6px; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }/* 4 carretas ou mais no mesmo status e hora */
+.janela-tr { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: middle; }
+/* temporizador em etiqueta: cinza enquanto falta tempo, vermelho suave quando a janela ja passou */
+.janela-tr .crono { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 5px; border-radius: 10px;
+  background: color-mix(in srgb, var(--ink-1) 7%, var(--surface)); color: var(--ink-2); font-weight: 600; }
+.janela-tr .crono svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.janela-tr .crono.atrasada { background: color-mix(in srgb, var(--critical) 13%, var(--surface)); color: color-mix(in srgb, var(--critical) 85%, var(--ink-1)); }/* 4 carretas ou mais no mesmo status e hora */
 #tab-consol td.alerta-qtd { color: var(--critical); font-weight: 700; background: color-mix(in srgb, var(--critical) 10%, var(--surface)); }#tab-consol td.tot { font-weight: 650; }#tab-consol td { text-align: center; }#tab-consol td:first-child { text-align: left; }#tab-consol tr.expansivel { cursor: pointer; }/* linha e coluna sob o mouse (destaque em cruz); o cruzamento fica um pouco mais escuro */
 #tab-consol tr:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }#tab-consol .col-hover { background: color-mix(in srgb, var(--ink-1) 5%, var(--surface)) !important; }#tab-consol tr:hover td.col-hover { background: color-mix(in srgb, var(--ink-1) 11%, var(--surface)) !important; }#tab-consol tr.expansivel:hover td { background: color-mix(in srgb, var(--ink-1) 5%, transparent); }#tab-consol .seta { display: inline-block; width: 14px; color: var(--ink-3); }#tab-consol tr.detalhe td { font-size: 12px; color: var(--ink-2); background: var(--surface); }#tab-consol tr.detalhe td:first-child { padding-left: 30px; }#tab-consol tr.detalhe td.tot { font-weight: 500; }#tab-consol td.vazio { color: var(--grid); }#tab-consol th.hoje { color: var(--ink-1); font-weight: 700; }#tab-consol tr.sem-fim td { color: var(--ink-2); font-style: italic; border-top: 1px solid var(--axis); }#tab-consol td.tot { font-weight: 650; }#tab-consol .col-barra { width: 180px; min-width: 120px; }#tab-consol .trilho-hora { height: 12px; }#tab-consol .barra-hora { height: 100%; border-radius: 0 3px 3px 0; background: color-mix(in srgb, var(--s1) 45%, var(--surface)); }#tab-consol .barra-hora.pico { background: var(--s1); }
 /* historico: pedidos sem tempo na etapa (falta data / datas invalidas) */
@@ -445,12 +451,33 @@ function quantil(arr, q) {
 const media = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
 const tempos = (rows, k) => rows.map(r => r[I.tempo + k]).filter(v => v != null);
 const fmtDia = d => d.slice(8, 10) + "/" + d.slice(5, 7);
-// horario da janela de expedicao (data_exp = I.datas[8]) de cada TU/carreta, ex: "07:00"
-const horaJanela = r => ((r[I.datas] || [])[8] || "").slice(11, 16);
-// nome da transportadora com as janelas dela ao lado (mais de uma janela no recorte: todas, em ordem)
-const trComJanela = (tr, janelas) => {
+// janela de expedicao (data_exp = I.datas[8]) de cada TU/carreta, ex: "2026-11-19 07:00"
+const horaJanela = r => ((r[I.datas] || [])[8] || "").slice(0, 16);
+const dataDeIso = s => new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), +s.slice(11, 13), +s.slice(14, 16));
+const fmtCrono = ms => {
+  const t = Math.floor(Math.abs(ms) / 1000);
+  return `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+};
+// temporizador ate a janela: "faltam h:mm:ss" ou, depois da janela, "janela passou há h:mm:ss" (em vermelho)
+const RELOGIO = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
+const textoCrono = ms => ms > 0 ? `faltam ${fmtCrono(ms)}` : `atrasada ${fmtCrono(ms)}`;
+function preencherCrono(el) {
+  const ms = dataDeIso(el.dataset.j) - Date.now();
+  el.lastChild.textContent = textoCrono(ms);
+  el.classList.toggle("atrasada", ms <= 0);
+}
+setInterval(() => document.querySelectorAll(".crono[data-j]").forEach(preencherCrono), 1000);
+// nome da transportadora com as janelas dela ao lado (data e hora; mais de uma janela: uma embaixo da outra).
+// comCrono = mostra o temporizador (nao faz sentido para carretas ja expedidas)
+const trComJanela = (tr, janelas, comCrono = true) => {
   const js = [...new Set(janelas.filter(Boolean))].sort();
-  return js.length ? `${tr} <span class="janela-tr">${js.join(" · ")}</span>` : tr;
+  if (!js.length) return tr;
+  return tr + js.map(j => {
+    const ms = dataDeIso(j) - Date.now();
+    const crono = !comCrono ? "" : `<span class="crono${ms <= 0 ? " atrasada" : ""}" data-j="${j}">` +
+      `${RELOGIO}<span>${textoCrono(ms)}</span></span>`;
+    return `<span class="janela-tr">${j.slice(8, 10)}/${j.slice(5, 7)} ${j.slice(11, 16)}${crono}</span>`;
+  }).join("");
 };
 function slaStats(rows, i) {
   const c = [0, 0, 0];
@@ -918,7 +945,7 @@ function renderTabelaStatus(rows) {
     const escalaTr = TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s] ? Math.max(0, ...lista.map(o => Math.abs(mediaDe(s, o.rs) || 0))) : 0;
     const barraTr = v => TEMPO_DO_STATUS[s] ? barra(v, escalaTr) : TEMPO_EXTRA[s] ? barraSinal(v, escalaTr) : "";
     return lista
-      .map(({ tr, rs, n }) => `<tr class="detalhe"><td>${trComJanela(tr, rs.map(horaJanela))}</td>` +
+      .map(({ tr, rs, n }) => `<tr class="detalhe"><td>${trComJanela(tr, rs.map(horaJanela), s !== "EXPEDIDO")}</td>` +
         (TEMPO_DO_STATUS[s] || TEMPO_EXTRA[s] ? `<td class="ini">${fmtHms(mediaDe(s, rs))}${barraTr(mediaDe(s, rs))}</td><td></td>` : `<td class="ini"></td><td></td>`) +
         celulas(resp, () => `<td class="ini">${fmtInt(n)}</td><td>${pct(n)}</td>`) +
         `<td class="ini">${fmtInt(n)}</td><td>${pct(n)}</td></tr>`).join("");
@@ -1194,7 +1221,7 @@ function renderMatrizConsolidacao(rows) {
       const porTr = {};
       cs.forEach(c => (porTr[c.tr] = porTr[c.tr] || []).push(c));
       Object.entries(porTr).sort((u, v) => v[1].length - u[1].length)
-        .forEach(([tr, ct]) => { html += linha("detalhe", trComJanela(tr, ct.map(c => c.janela)), ct); });
+        .forEach(([tr, ct]) => { html += linha("detalhe", trComJanela(tr, ct.map(c => c.janela), x.st.nome !== "EXPEDIDO"), ct); });
     }
     return html;
   }).join("");
