@@ -101,9 +101,10 @@ def tratar(bruto):
     df.loc[df["data_checkout"] <= df["data_exp"], "sla_expedicao"] = "dentro_do_prazo"
     df.loc[df["data_checkout"].isna(), "sla_expedicao"] = "em_aberto"
 
-    # ===== 3d2. Criacao da coluna sla_veiculos (chegada na doca ate a janela de expedicao) =====
+    # ===== 3d2. Criacao da coluna sla_veiculos (chegada na doca ate 1h antes da janela de expedicao) =====
+    # meta: o veiculo tem que estar na doca 1 hora antes da janela (data_exp - 1h)
     df["sla_veiculos"] = "fora_do_prazo"
-    df.loc[df["data_chegada_doca"] <= df["data_exp"], "sla_veiculos"] = "dentro_do_prazo"
+    df.loc[df["data_chegada_doca"] <= df["data_exp"] - pd.Timedelta(hours=1), "sla_veiculos"] = "dentro_do_prazo"
     df.loc[df["data_chegada_doca"].isna(), "sla_veiculos"] = "em_aberto"
 
     # ===== 3e. Criacao da coluna sla_carregamento =====
