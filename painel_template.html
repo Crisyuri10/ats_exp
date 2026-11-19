@@ -282,6 +282,84 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
 .mini-g text.rotulo-dia.hoje { fill: var(--ink-1); font-weight: 700; }
 .mini-g text.rotulo-mes { fill: var(--ink-2); font-size: 12px; font-weight: 600; }/* matriz de carretas por hora de fim da consolidacao */
 #tab-consol th, #tab-consol td { padding: 4px 8px; }#tab-consol th { background: var(--surface); text-align: center; }#tab-consol th:first-child { text-align: left; }#tab-consol th.nome-proc { font-weight: 500; color: var(--ink-3); font-size: 11px; }#tab-consol th.fora { color: var(--ink-3); font-style: italic; }#tab-consol .desde { display: block; margin: 2px 0 0 18px; font-size: 11px; color: var(--ink-3); }
+/* ===== quadro de partidas: estilo painel de aeroporto (azul-petroleo, texto amarelo italico) ===== */
+.quadro-partidas { --p-am: #ffe14d; --p-azul: #8fd3f0;
+  background: linear-gradient(160deg, #0d6a86 0%, #0a4d6b 45%, #08385a 100%); border-color: #08385a; color: #fff;
+  padding: 0; overflow: hidden; }
+.cab-partidas { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 22px 10px;
+  flex-wrap: wrap; }
+.tit-quadro { margin: 0; display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 800; font-style: italic;
+  letter-spacing: .02em; text-transform: uppercase; color: var(--p-am); }
+.tit-quadro svg { width: 34px; height: 34px; fill: var(--p-am); }
+.sub-quadro { margin-top: 2px; font-size: 12.5px; color: var(--p-azul); }
+.relogio-bloco { display: flex; align-items: center; gap: 10px; flex-direction: row; }
+.relogio-bloco .sub-quadro { display: none; }
+.relogio-bloco::before { content: ""; width: 24px; height: 24px; border: 3px solid var(--p-am); border-radius: 50%;
+  background: linear-gradient(var(--p-am), var(--p-am)) 50% 30% / 3px 8px no-repeat, linear-gradient(var(--p-am), var(--p-am)) 65% 50% / 7px 3px no-repeat;
+  box-sizing: border-box; }
+.relogio-agora { font-size: 28px; font-weight: 800; font-style: italic; color: var(--p-am); font-variant-numeric: tabular-nums; line-height: 1; }
+/* indicadores numa linha + filtro */
+.faixa-partidas { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 6px 22px 10px; border-bottom: 2px solid rgba(255,255,255,.25); }
+.kpis-partidas { display: flex; gap: 22px; flex-wrap: wrap; align-items: baseline; }
+.kpi-p { display: flex; align-items: baseline; gap: 6px; }
+.kpi-p .v { font-size: 18px; font-weight: 800; font-style: italic; color: #fff; font-variant-numeric: tabular-nums; }
+.kpi-p .v small { font-size: 12px; font-weight: 500; color: var(--p-azul); margin-left: 3px; font-style: normal; }
+.kpi-p .r { font-size: 12.5px; color: var(--p-azul); }
+.kpi-p.destaque .v, .kpi-p.k-embarque .v { color: var(--p-am); }
+.kpi-p.k-atrasada .v { color: #ff8a8a; }
+.kpi-p.k-no-horario .v { color: #8ff0b0; }
+.seg-partidas { margin-left: auto; display: inline-flex; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; overflow: hidden; }
+.seg-partidas button { background: transparent; border: 0; color: var(--p-azul); font: inherit; font-size: 12.5px; font-weight: 700;
+  padding: 6px 12px; cursor: pointer; }
+.seg-partidas button + button { border-left: 1px solid rgba(255,255,255,.35); }
+.seg-partidas button:hover { color: #fff; }
+.seg-partidas button.ativo { background: var(--p-am); color: #08385a; }
+/* tabela */
+.quadro-partidas .tabela-rolagem { margin: 0; }
+#tab-partidas { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; font-size: 16px; }
+#tab-partidas th, #tab-partidas td { text-align: left; background: transparent; }
+#tab-partidas th { font-size: 13px; font-weight: 800; font-style: italic; letter-spacing: .03em; text-transform: uppercase; color: #fff;
+  padding: 8px 12px; border-bottom: 2px solid rgba(255,255,255,.25); white-space: nowrap; }
+#tab-partidas td { padding: 7px 12px; color: #fff; font-weight: 800; white-space: nowrap; vertical-align: middle;
+  overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid rgba(255,255,255,.07); }
+#tab-partidas tr.linha:hover td { background: rgba(255,255,255,.06); }
+#tab-partidas th.num, #tab-partidas td.num { text-align: right; font-variant-numeric: tabular-nums; }
+#tab-partidas .hora { font-style: italic; font-size: 19px; color: var(--p-am); font-variant-numeric: tabular-nums; }
+#tab-partidas .hora .data-j { margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--p-azul); }
+#tab-partidas .transp { font-size: 18px; font-style: italic; color: var(--p-am); }
+#tab-partidas .sub { color: var(--p-azul); font-size: 13px; font-weight: 600; }
+#tab-partidas .chip { font-size: 11px; font-weight: 800; border-radius: 10px; padding: 3px 10px; }
+#tab-partidas .mono { font-variant-numeric: tabular-nums; }
+/* numero do horario (como o "gate"): branco, grande */
+#tab-partidas .portao { display: inline-block; min-width: 30px; text-align: center; color: #fff; font-weight: 800; font-size: 18px; }
+/* situacao em texto amarelo italico (como a coluna status do painel) */
+.sit { font-weight: 800; font-style: italic; }
+#tab-partidas .sit { font-size: 16px; }
+.sit.no-horario { color: var(--p-am); }
+/* embarque: etiqueta laranja (o branco piscando parecia cinza/apagado); pisca de leve */
+.sit.embarque { color: #08385a; background: #ffa94d; padding: 1px 10px; border-radius: 3px; animation: piscar-leve 1.6s ease-in-out infinite; }
+@keyframes piscar-leve { 50% { opacity: .7; } }
+.sit.atrasada { color: #ff8a8a; }
+.sit.partiu { color: var(--p-azul); }
+@keyframes piscar { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .sit.embarque { animation: none; } }
+#tab-partidas .aguardando-atraso { color: #ff8a8a; font-weight: 700; font-size: 13px; }
+#tab-partidas .crono-p { color: #fff; font-size: 15px; font-style: italic; }
+#tab-partidas .crono-p.atrasada { color: #ff8a8a; }
+#tab-partidas tr.partiu td { opacity: .75; }
+/* separador "ja partiram" (como o "Flights for 15/11") */
+#tab-partidas tr.sep td { cursor: pointer; padding: 9px 12px; color: #fff; font-size: 13px; font-weight: 800; font-style: italic;
+  text-align: center; border-top: 2px solid rgba(255,255,255,.25); border-bottom: 1px solid rgba(255,255,255,.12); }
+#tab-partidas tr.sep:hover td { color: var(--p-am); }
+/* rodape */
+.rodape-partidas { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 11px 20px;
+  background: rgba(0,0,0,.22); color: #fff; font-size: 17px; font-weight: 800; font-style: italic; text-align: center; }
+.rodape-partidas b { color: var(--p-am); font-size: 24px; }
+.rodape-partidas.zero b { color: #8ff0b0; }
+/* modo Partidas: troca a tabela de status pelo quadro (o atributo hidden vence o display dos cartoes) */
+#bloco-status[hidden], #bloco-partidas[hidden] { display: none !important; }
+#bloco-partidas { margin: 4px 0 0; box-shadow: none; }
 /* janela de expedicao ao lado do nome da transportadora */
 .janela-tr { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 11px; color: var(--ink-3);
   font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: middle; }
@@ -381,12 +459,29 @@ summary { cursor: pointer; color: var(--ink-2); font-size: 12px; }
         <!-- filtro do dia e modo (tempo real / historico): valem so para esta tabela -->
         <div class="filtros" style="margin:0">
           <div class="seg" id="f-modo" role="group" aria-label="Visão da tabela">
-            <button data-m="real" class="ativo">Tempo real</button><button data-m="hist-dia">Histórico por data</button><button data-m="hist-tr">Histórico por transportadora</button>
+            <button data-m="real" class="ativo">Tempo real</button><button data-m="hist-dia">Histórico por data</button><button data-m="hist-tr">Histórico por transportadora</button><button data-m="partidas">Partidas</button>
           </div>
           <button id="f-limpar">Limpar filtros</button>
         </div>
       </div>
-      <div class="tabela-rolagem"><table class="tab-resumo" id="tab-status"></table></div>
+      <div class="tabela-rolagem" id="bloco-status"><table class="tab-resumo" id="tab-status"></table></div>
+      <!-- quadro de partidas (estilo aeroporto): uma linha por carreta, em ordem de janela -->
+      <div class="card quadro-partidas notranslate" translate="no" id="bloco-partidas" hidden>
+        <div class="cab-partidas">
+          <div>
+            <h2 class="tit-quadro" id="tit-partidas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 5h13v10H1zM14 8h4.5l3.5 4v3h-8zM5 19.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>Partidas</h2>
+            <div class="sub-quadro" id="sub-partidas"></div>
+          </div>
+          <div class="relogio-bloco"><span class="relogio-agora" id="relogio-agora"></span><span class="sub-quadro">horário atual</span></div>
+        </div>
+        <div class="faixa-partidas">
+          <div class="seg-partidas" id="f-partidas" role="group" aria-label="Filtro do quadro de partidas">
+            <button data-f="nao-chegou" class="ativo">Não chegaram</button><button data-f="todas">Todas</button>
+          </div>
+        </div>
+        <div class="tabela-rolagem"><table id="tab-partidas"></table></div>
+        <div class="rodape-partidas" id="rodape-partidas"></div>
+      </div>
       </div>
       </div>
     </div>
@@ -1246,6 +1341,113 @@ function renderMatrizConsolidacao(rows) {
   });
 }
 
+
+// ===== quadro de partidas (estilo aeroporto): uma linha por carreta do dia, em ordem de janela =====
+// situacao: PARTIU (expedida), ATRASADA (janela passou), EMBARQUE (falta 1h ou menos), NO HORARIO
+const MIN_EMBARQUE = 60;
+let partidasAbertas = false;  // carretas ja expedidas ficam recolhidas (clique em "Já partiram" mostra)
+let filtroPartidas = "nao-chegou";  // "nao-chegou" = so carretas sem chegada na doca e ainda nao expedidas; "todas"
+function situacaoPartida(c) {
+  if (c.expedida) return { cls: "partiu", txt: "Partiu" };
+  const min = (dataDeIso(c.janela) - Date.now()) / 60000;
+  if (min <= 0) return { cls: "atrasada", txt: "Atrasada" };
+  if (min <= MIN_EMBARQUE) return { cls: "embarque", txt: "Embarque" };
+  return { cls: "no-horario", txt: "No horário" };
+}
+function renderPartidas(rows) {
+  const dia = selDia.value || hoje;
+  const car = {};
+  rows.filter(r => r[I.dia] === dia).forEach(r => {
+    const ds = r[I.datas] || [];
+    const partes = String(r[I.chave] || "").split("_");
+    const c = car[r[I.chave]] = car[r[I.chave]] ||
+      { tr: r[I.tr], horario: partes.length > 2 ? partes[partes.length - 2] : "", janela: horaJanela(r),
+        st: 99, tus: 0, pedidos: 0, doca: "", checkout: "" };
+    c.st = Math.min(c.st, idxStatus(r[I.status]));
+    c.tus += 1;
+    c.pedidos += r[I.pedidos] || 0;
+    if (ds[4] && (!c.doca || ds[4] < c.doca)) c.doca = ds[4];          // primeira chegada na doca
+    if (ds[7] && ds[7] > c.checkout) c.checkout = ds[7];                // ultimo checkout
+  });
+  const soNaoChegou = filtroPartidas === "nao-chegou";
+  const lista = Object.values(car).filter(c => c.janela);
+  lista.forEach(c => { c.expedida = STATUS[c.st] && STATUS[c.st].nome === "EXPEDIDO"; });
+  // quantas carretas do dia ainda nao chegaram na doca (sem chegada apontada e nao expedidas), com qualquer filtro
+  const qtdNaoChegou = lista.filter(c => !c.doca && !c.expedida).length;
+  const totalDia = lista.length;
+  // filtro "Não chegaram": so os veiculos sem chegada na doca (e que ainda nao sairam)
+  if (soNaoChegou) for (let i = lista.length - 1; i >= 0; i--) if (lista[i].doca || lista[i].expedida) lista.splice(i, 1);
+  lista.sort((a, b) => a.janela.localeCompare(b.janela) || a.tr.localeCompare(b.tr));
+  const pendentes = lista.filter(c => !c.expedida), partiram = lista.filter(c => c.expedida);
+  const hm = s => s ? s.slice(11, 16) : "";
+  const ddmm = s => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+  // hora com a data so quando o dia e diferente do dia da janela (ex: chegou na vespera)
+  const hmDia = (s, ref) => s.slice(0, 10) === ref.slice(0, 10) ? hm(s) : `${hm(s)} <span class="sub">${ddmm(s)}</span>`;
+  const linhaPartida = c => {
+    const st = STATUS[c.st] || {}, sit = situacaoPartida(c);
+    const tempo = c.expedida
+      ? `<span class="mono sub">checkout ${c.checkout ? hmDia(c.checkout, c.janela) : "—"}</span>`
+      : `<span class="crono-p mono" data-jp="${c.janela}"></span>`;
+    // numero do horario (ex: "HORÁRIO 3" -> 3) na caixa, como o portao do painel de aeroporto
+    const numHorario = (String(c.horario).match(/\d+/) || [c.horario || "—"])[0];
+    return `<tr class="linha ${c.expedida ? "partiu" : "s-" + sit.cls}">` +
+      `<td class="hora">${hm(c.janela)}<span class="data-j">${ddmm(c.janela)}</span></td>` +
+      `<td><span class="transp" title="${c.tr} ${c.horario}">${c.tr}</span></td>` +
+      `<td><span class="chip" style="background:${st.cor};color:${st.txt}">${st.nome || "—"}</span></td>` +
+      `<td><span class="portao" title="${c.horario}">${numHorario}</span></td>` +
+      `<td class="num">${fmtInt(c.tus)}</td><td class="num">${fmtInt(c.pedidos)}</td>` +
+      // sem chegada: "aguardando" fica vermelho quando ja passou do limite (janela - 1h, meta do SLA de chegada)
+      `<td class="mono">${c.doca ? hmDia(c.doca, c.janela) : dataDeIso(c.janela) - Date.now() <= META_CHEGADA_MIN * 60000
+        ? `<span class="aguardando-atraso">aguardando</span>` : `<span class="sub">aguardando</span>`}</td>` +
+      `<td><span class="sit ${sit.cls}" data-sit="${c.expedida ? "" : c.janela}">${sit.txt}</span></td>` +
+      `<td class="num">${tempo}</td></tr>`;
+  };
+  $("sub-partidas").textContent = `Expedição ${fmtDia(dia)} · ${fmtInt(totalDia)} carretas programadas`;
+  // faixa do rodape (como o banner do painel do aeroporto)
+  $("rodape-partidas").innerHTML = !totalDia ? "" : qtdNaoChegou
+    ? `<b>${fmtInt(qtdNaoChegou)}</b> de ${fmtInt(totalDia)} carretas ainda não chegaram na doca`
+    : `<b>✓</b> Todos os veículos do dia já chegaram na doca`;
+  $("rodape-partidas").classList.toggle("zero", !qtdNaoChegou);
+  $("f-partidas").querySelectorAll("button").forEach(b => {
+    b.textContent = b.dataset.f === "nao-chegou" ? `Não chegaram (${fmtInt(qtdNaoChegou)})` : `Todas (${fmtInt(totalDia)})`;
+    b.classList.toggle("ativo", b.dataset.f === filtroPartidas);
+    b.onclick = () => { filtroPartidas = b.dataset.f; renderPartidas(D.linhas); };
+  });
+  $("tab-partidas").innerHTML = !lista.length
+    ? `<tr><td class="sub" style="padding:12px 8px">${soNaoChegou ? "Todos os veículos deste dia já chegaram na doca." : "Sem carretas para este dia."}</td></tr>`
+    : `<colgroup><col style="width:12%"><col style="width:22%"><col style="width:15%"><col style="width:7%"><col style="width:5%"><col style="width:7%">` +
+      `<col style="width:11%"><col style="width:10%"><col style="width:11%"></colgroup>` +
+      `<tr><th>Janela</th><th>Transportadora</th><th>Status</th><th>Horário</th><th class="num">TUs</th><th class="num">Pedidos</th>` +
+      `<th>Chegada doca</th><th>Situação</th><th class="num">Tempo</th></tr>` +
+      (pendentes.length ? pendentes.map(linhaPartida).join("")
+        : `<tr><td colspan="9" class="sub" style="padding:12px">Todas as carretas do dia já partiram.</td></tr>`) +
+      (partiram.length ? `<tr class="sep" id="sep-partiram"><td colspan="9">${partidasAbertas ? "▾" : "▸"} Já partiram · ${partiram.length}</td></tr>` +
+        (partidasAbertas ? partiram.map(linhaPartida).join("") : "") : "");
+  const sep = $("sep-partiram");
+  if (sep) sep.onclick = () => { partidasAbertas = !partidasAbertas; renderPartidas(D.linhas); };
+  atualizarPartidas();
+}
+// a cada segundo: relogio do quadro, temporizadores e situacao (EMBARQUE/ATRASADA muda sozinha com o tempo)
+function atualizarPartidas() {
+  const agora = new Date();
+  const rel = $("relogio-agora");
+  if (rel) rel.textContent = agora.toLocaleTimeString("pt-BR");
+  document.querySelectorAll("#tab-partidas .crono-p[data-jp]").forEach(el => {
+    const ms = dataDeIso(el.dataset.jp) - agora;
+    el.textContent = ms > 0 ? `faltam ${fmtCrono(ms)}` : `+${fmtCrono(ms)}`;
+    el.classList.toggle("atrasada", ms <= 0);
+  });
+  document.querySelectorAll("#tab-partidas .sit[data-sit]").forEach(el => {
+    if (!el.dataset.sit) return;
+    const s = situacaoPartida({ janela: el.dataset.sit });
+    el.className = "sit " + s.cls;
+    el.textContent = s.txt;
+    const tr = el.closest("tr");
+    if (tr) tr.className = "linha s-" + s.cls;
+  });
+}
+setInterval(atualizarPartidas, 1000);
+
 // ===== popup de divergencias: TUs sem tempo na etapa e as colunas da planilha que causaram =====
 const fontesPopup = [];
 // colunas da planilha (nome original da Sheet1) na ordem de I.datas
@@ -1398,7 +1600,15 @@ function render() {
   // historico = D-1: so dias de expedicao ate ontem (hoje e futuros ainda estao em andamento)
   // o filtro de dia e os KPIs funcionam normal; o D-1 vale so para a tabela do historico
   renderKpis(rows);
-  if (ehHist()) {
+  // modo "Partidas": o quadro de partidas toma o lugar da tabela de status
+  const emPartidas = modo === "partidas";
+  $("bloco-status").hidden = emPartidas;
+  $("bloco-partidas").hidden = !emPartidas;
+  if (emPartidas) {
+    $("tit-status").textContent = "Partidas das carretas";
+    $("sub-status").textContent = "Uma linha por carreta do dia escolhido, em ordem de janela";
+    renderPartidas(D.linhas);
+  } else if (ehHist()) {
     const porData = modo === "hist-dia";
     $("tit-status").textContent = `Histórico dos tempos médios por ${porData ? "data" : "transportadora"} (D-1)`;
     $("sub-status").textContent = "";
@@ -1430,7 +1640,7 @@ function salvarEstado() {
 try {
   const e = JSON.parse(localStorage.getItem(CHAVE_ESTADO) || "null");
   if (e && Date.now() - e.t < 30 * 60 * 1000) {
-    modo = ["real", "hist-dia", "hist-tr"].includes(e.modo) ? e.modo : "real";
+    modo = ["real", "hist-dia", "hist-tr", "partidas"].includes(e.modo) ? e.modo : "real";
     metrica = ["pedidos", "tus", "carretas"].includes(e.metrica) ? e.metrica : "pedidos";
     if ([...selDia.options].some(o => o.value === e.dia) && !(ehHist() && e.dia >= hoje)) selDia.value = e.dia;
     else if (ehHist()) selDia.value = "";
